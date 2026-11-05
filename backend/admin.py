@@ -199,7 +199,7 @@ def import_backup(payload: dict, db: Session = Depends(get_db)):
                 continue
             clean = {}
             for col in model.__table__.columns:
-                if col.key not in item:
+                if col.key == "id" or col.key not in item:
                     continue
                 value = item[col.key]
                 if isinstance(value, str) and col.type.__class__.__name__ == "DateTime":
