@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.log
+
+# بيانات محلية (لا تُرفع أبداً)
+data/
+*.db
+*.sqlite3
+
+# Flutter / Dart
+flutter/gold_pulse_app/build/
+flutter/gold_pulse_app/.dart_tool/
+flutter/gold_pulse_app/.flutter-plugins
+flutter/gold_pulse_app/.flutter-plugins-dependencies
+flutter/gold_pulse_app/android/.gradle/
+flutter/gold_pulse_app/android/local.properties
+flutter/gold_pulse_app/ios/Pods/
+flutter/gold_pulse_app/ios/.symlinks/
+flutter/gold_pulse_app/**/Generated.xcconfig
+flutter/gold_pulse_app/**/flutter_export_environment.sh
+
+# مخرجات التوزيع
+dist/*.zip
+dist/*.apk
+
+# نظام التشغيل
+Thumbs.db
+.DS_Store
