@@ -115,6 +115,7 @@ flutter build apk --release --dart-define=API_BASE=https://gold-pulse-iota.verce
 > (PostgreSQL)، `PORT`، `GOLD_PRICE_ALERT_PCT`، `GOLD_PRICE_ALERT_MINUTES`،
 > `GOLD_LOCAL_BUY_MARGIN_PCT`، `GOLD_LOCAL_SELL_MARGIN_PCT` (هوامش سوق الذهب العراقي)،
 > `GOLD_PARALLEL_FX_URL`، `GOLD_PARALLEL_FX_FALLBACK_PREMIUM_PCT`،
+> `GOLD_FX_MARKET_CACHE_SECONDS` (افتراضياً 60 ثانية — تحديث سعر السوق)،
 > `GOLD_RATE_ALERT_IQD`، `GOLD_RATE_ALERT_WINDOW_MINUTES`، `GOLD_RATE_ALERT_COOLDOWN_MINUTES`.
 
 ---
