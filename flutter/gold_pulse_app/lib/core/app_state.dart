@@ -19,6 +19,7 @@ class AppState extends ChangeNotifier {
   bool autoRefresh = true;
   String deviceId = '';
   String adminPin = '';
+  int myRating = 0;
   String historyRange = '1y';
 
   AppConfig config = AppConfig.fallback;
@@ -63,13 +64,10 @@ class AppState extends ChangeNotifier {
   String get langCode => en ? 'en' : 'ar';
   bool get isOwner => adminPin.isNotEmpty;
   int get unreadAlerts => alertsData?.unread ?? 0;
-  int get activeUnread =>
-      alertsData?.items.where((a) => !a.isRead).length ?? 0;
+  int get activeUnread => alertsData?.items.where((a) => !a.isRead).length ?? 0;
 
-  List<AdItem> get homeAds => ads
-      .where((a) => a.placement == 'home' || a.isFeatured)
-      .take(6)
-      .toList();
+  List<AdItem> get homeAds =>
+      ads.where((a) => a.placement == 'home' || a.isFeatured).take(6).toList();
 
   List<AdItem> get featuredAds =>
       ads.where((a) => a.isFeatured).take(6).toList();
@@ -79,15 +77,33 @@ class AppState extends ChangeNotifier {
     final p = _prefs!;
     final query = Uri.base.queryParameters;
     final queryLocale = query['lang'];
-    en = queryLocale == 'en' || (queryLocale != 'ar' && p.getString('locale') == 'en');
+    en =
+        queryLocale == 'en' ||
+        (queryLocale != 'ar' && p.getString('locale') == 'en');
     final theme = query['theme'] ?? p.getString('theme') ?? 'dark';
     themeMode = theme == 'light'
         ? ThemeMode.light
         : theme == 'system'
-            ? ThemeMode.system
-            : ThemeMode.dark;
-    api.baseUrl = p.getString('api_base') ?? ApiClient.defaultBaseUrl;
+        ? ThemeMode.system
+        : ThemeMode.dark;
+    api.baseUrl = ApiClient.defaultBaseUrl;
+    final savedBase = p.getString('api_base');
+    if (savedBase != null &&
+        savedBase.isNotEmpty &&
+        savedBase != ApiClient.defaultBaseUrl) {
+      // لا نثق بعنوان محفوظ من نسخة قديمة (شبكة محلية/نفق منتهي):
+      // نستخدمه فقط إذا كان HTTPS وخادماً حياً فعلاً.
+      final usable =
+          savedBase.startsWith('https://') &&
+          await ApiClient(baseUrl: savedBase).ping();
+      if (usable) {
+        api.baseUrl = savedBase;
+      } else {
+        await p.remove('api_base');
+      }
+    }
     adminPin = p.getString('admin_pin') ?? '';
+    myRating = p.getInt('my_rating') ?? 0;
     autoRefresh = p.getBool('auto_refresh') ?? true;
     deviceId = p.getString('device_id') ?? _newDeviceId();
     if (p.getString('device_id') == null) {
@@ -126,9 +142,36 @@ class AppState extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
+  /// رسالة خطأ نظيفة لا تكشف عنوان الخادم أو تفاصيل الشبكة للمستخدم.
+  String _cleanError(Object e) {
+    var text = e.toString();
+    text = text.replaceAll(RegExp(r'https?://\S+'), '');
+    text = text.replaceAll(
+      RegExp(
+        r'\b[\w.-]+\.(?:vercel\.app|onrender\.com|ngrok\.io|trycloudflare\.com|localhost)\b',
+        caseSensitive: false,
+      ),
+      '',
+    );
+    text = text.replaceAll('ClientException', 'تعذر الاتصال');
+    text = text.replaceAll('SocketException', 'انقطاع الشبكة');
+    text = text.replaceAll('HandshakeException', 'فشل تأمين الاتصال');
+    text = text.replaceAll('TimeoutException', 'انتهت المهلة');
+    text = text.replaceAll(RegExp(r'[\s:\-]+$'), '').trim();
+    if (text.isEmpty || text == 'Exception') {
+      return en
+          ? 'Could not reach the server. Check your connection and try again.'
+          : 'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.';
+    }
+    return text;
+  }
+
   String _newDeviceId() {
     final rand = Random.secure();
-    final part = List.generate(8, (_) => rand.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
+    final part = List.generate(
+      8,
+      (_) => rand.nextInt(256).toRadixString(16).padLeft(2, '0'),
+    ).join();
     return 'dev-${DateTime.now().millisecondsSinceEpoch.toRadixString(16)}-$part';
   }
 
@@ -175,8 +218,8 @@ class AppState extends ChangeNotifier {
       mode == ThemeMode.light
           ? 'light'
           : mode == ThemeMode.system
-              ? 'system'
-              : 'dark',
+          ? 'system'
+          : 'dark',
     );
     _notify();
   }
@@ -200,9 +243,30 @@ class AppState extends ChangeNotifier {
       await api.config(lang: langCode);
       return true;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
       _notify();
       return false;
+    }
+  }
+
+  /// إرسال تقييم التطبيق وحفظه محلياً أيضاً.
+  Future<Map<String, dynamic>?> rateApp(int rating, String comment) async {
+    try {
+      final res = await api.sendFeedback(
+        deviceId: deviceId,
+        rating: rating,
+        comment: comment,
+        lang: langCode,
+        appVersion: config.version,
+      );
+      myRating = rating;
+      await _prefs?.setInt('my_rating', rating);
+      _notify();
+      return res;
+    } catch (e) {
+      lastError = _cleanError(e);
+      _notify();
+      return null;
     }
   }
 
@@ -244,7 +308,7 @@ class AppState extends ChangeNotifier {
       config = await api.config(lang: langCode);
       _notify();
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
       _notify();
     }
   }
@@ -259,7 +323,7 @@ class AppState extends ChangeNotifier {
       marketUpdatedAt = DateTime.now();
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingMarket = false;
       _notify();
@@ -276,7 +340,7 @@ class AppState extends ChangeNotifier {
       analysisUpdatedAt = DateTime.now();
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingAnalysis = false;
       _notify();
@@ -292,7 +356,7 @@ class AppState extends ChangeNotifier {
       newsData = await api.news(lang: langCode);
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingNews = false;
       _notify();
@@ -308,7 +372,7 @@ class AppState extends ChangeNotifier {
       alertsData = await api.alerts();
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingAlerts = false;
       _notify();
@@ -325,7 +389,7 @@ class AppState extends ChangeNotifier {
       historyData = await api.history(range);
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingHistory = false;
       _notify();
@@ -339,7 +403,7 @@ class AppState extends ChangeNotifier {
       shops = await api.shops(q: q, city: city);
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingShops = false;
       _notify();
@@ -362,7 +426,7 @@ class AppState extends ChangeNotifier {
       ads = await api.ads(limit: 80);
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingAds = false;
       _notify();
@@ -383,7 +447,7 @@ class AppState extends ChangeNotifier {
       currencies = await api.currencies();
       lastError = null;
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingCurrencies = false;
       _notify();
@@ -408,7 +472,7 @@ class AppState extends ChangeNotifier {
       presence = await api.presenceStats();
       _notify();
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
     } finally {
       loadingPresence = false;
       _notify();
@@ -437,7 +501,7 @@ class AppState extends ChangeNotifier {
       _notify();
       return true;
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
       _notify();
       return false;
     }
@@ -448,7 +512,7 @@ class AppState extends ChangeNotifier {
       await api.markAllAlertsRead();
       await loadAlerts(silent: true);
     } catch (e) {
-      lastError = e.toString();
+      lastError = _cleanError(e);
       _notify();
     }
   }
@@ -466,12 +530,12 @@ class AppState extends ChangeNotifier {
     } catch (_) {}
   }
 
-  Future<void> refreshAll() async {
+  Future<void> refreshAll({bool silent = true}) async {
     await Future.wait([
-      loadMarket(),
-      loadAnalysis(),
-      loadNews(),
-      loadAlerts(),
+      loadMarket(silent: silent),
+      loadAnalysis(silent: silent),
+      loadNews(silent: silent),
+      loadAlerts(silent: silent),
       loadShops(),
       loadAds(),
       loadCurrencies(),
@@ -491,7 +555,7 @@ class AppState extends ChangeNotifier {
         return true;
       }
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
     }
     _notify();
     return false;
@@ -513,7 +577,7 @@ class AppState extends ChangeNotifier {
       adminAds = results[2] as List<AdItem>;
       await loadPresenceDetails();
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
     } finally {
       loadingAdmin = false;
       _notify();
@@ -540,7 +604,7 @@ class AppState extends ChangeNotifier {
       await Future.wait([loadAdminData(), loadShops(), loadShopCities()]);
       return true;
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
       _notify();
       return false;
     }
@@ -552,7 +616,7 @@ class AppState extends ChangeNotifier {
       await Future.wait([loadAdminData(), loadShops(), loadShopCities()]);
       return true;
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
       _notify();
       return false;
     }
@@ -564,7 +628,7 @@ class AppState extends ChangeNotifier {
       await Future.wait([loadAdminData(), loadAds()]);
       return true;
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
       _notify();
       return false;
     }
@@ -576,7 +640,7 @@ class AppState extends ChangeNotifier {
       await Future.wait([loadAdminData(), loadAds()]);
       return true;
     } catch (e) {
-      adminError = e.toString();
+      adminError = _cleanError(e);
       _notify();
       return false;
     }

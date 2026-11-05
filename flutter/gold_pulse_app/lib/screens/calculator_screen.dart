@@ -13,8 +13,18 @@ class CalculatorScreen extends StatefulWidget {
 }
 
 class _CalculatorScreenState extends State<CalculatorScreen> {
+  // أجور الصياغة الافتراضية للغرام حسب العيار (دينار عراقي).
+  static const Map<int, double> _defaultMaking = {
+    24: 5000,
+    22: 6000,
+    21: 7000,
+    18: 9000,
+  };
+
   final _weight = TextEditingController(text: '10');
-  final _making = TextEditingController(text: '0');
+  final _making = TextEditingController(
+    text: _defaultMaking[21]!.toStringAsFixed(0),
+  );
   final _commission = TextEditingController(text: '0');
   final _margin = TextEditingController(text: '2');
   final _buyback = TextEditingController(text: '5');
@@ -90,7 +100,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             children: [24, 22, 21, 18].map((k) {
                               final active = k == _karat;
                               return GestureDetector(
-                                onTap: () => setState(() => _karat = k),
+                                onTap: () => setState(() {
+                                  _karat = k;
+                                  _making.text = _defaultMaking[k]!
+                                      .toStringAsFixed(0);
+                                }),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 18,
@@ -176,7 +190,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.bolt_rounded, size: 15, color: c.gold),
+                                Icon(
+                                  Icons.bolt_rounded,
+                                  size: 15,
+                                  color: c.gold,
+                                ),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
@@ -202,8 +220,30 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             ),
                           ),
                         const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.currency_exchange_rounded,
+                              size: 12,
+                              color: c.gold,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${l.goldUsesParallel} · ${l.parallelDollarShort}: ${l.number(market?.usdIqd ?? 0, digits: 1)}',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 9,
+                                  height: 1.5,
+                                  color: c.muted,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         TextButton.icon(
-                          onPressed: () => setState(() => _advanced = !_advanced),
+                          onPressed: () =>
+                              setState(() => _advanced = !_advanced),
                           icon: Icon(
                             _advanced
                                 ? Icons.expand_less_rounded
@@ -225,7 +265,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         if (_advanced) ...[
                           _NumberField(
                             controller: _making,
-                            label: l.makingPerGram,
+                            label: '${l.makingPerGram} · $_karat',
                             hint: '0',
                             icon: Icons.handyman_outlined,
                             onChanged: (_) => setState(() {}),
@@ -270,7 +310,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                             onPressed: () {
                               setState(() {
                                 _weight.text = '10';
-                                _making.text = '0';
+                                _making.text = _defaultMaking[21]!
+                                    .toStringAsFixed(0);
                                 _commission.text = '0';
                                 _margin.text = '2';
                                 _buyback.text = '5';
@@ -278,7 +319,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                                 _useLive = true;
                               });
                             },
-                            icon: const Icon(Icons.restart_alt_rounded, size: 17),
+                            icon: const Icon(
+                              Icons.restart_alt_rounded,
+                              size: 17,
+                            ),
                             label: Text(l.reset),
                           ),
                         ),
@@ -327,7 +371,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          l.usd(total / (state.market?.usdIqd ?? 1517), digits: 2),
+                          l.usd(
+                            total / (state.market?.usdIqd ?? 1517),
+                            digits: 2,
+                          ),
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 12,
@@ -344,7 +391,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                         if (making > 0)
                           _ResultRow(label: l.makingCost, value: l.iqd(making)),
                         if (commission > 0)
-                          _ResultRow(label: l.commissionCost, value: l.iqd(commission)),
+                          _ResultRow(
+                            label: l.commissionCost,
+                            value: l.iqd(commission),
+                          ),
                         if (margin > 0)
                           _ResultRow(label: l.marginCost, value: l.iqd(margin)),
                         _ResultRow(

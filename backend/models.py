@@ -130,3 +130,35 @@ class MediaFile(Base):
     content_type: Mapped[str] = mapped_column(String(80), default="image/png")
     data: Mapped[bytes] = mapped_column(LargeBinary)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Feedback(Base):
+    """تقييم المستخدم للتطبيق (نجوم + ملاحظة) — يظهر للمالك فقط."""
+
+    __tablename__ = "feedback"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    rating: Mapped[int] = mapped_column(Integer, default=0)
+    comment: Mapped[str] = mapped_column(Text, default="")
+    lang: Mapped[str] = mapped_column(String(10), default="ar")
+    app_version: Mapped[str] = mapped_column(String(30), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
+class RateSnapshot(Base):
+    """قراءات سعر صرف السوق الموازي لمتابعة التغير وتوليد التنبيهات."""
+
+    __tablename__ = "rate_snapshots"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, index=True
+    )
+    parallel: Mapped[float] = mapped_column(Float, default=0)
+    official: Mapped[float] = mapped_column(Float, default=0)
+    gap_pct: Mapped[float] = mapped_column(Float, default=0)
+    source: Mapped[str] = mapped_column(String(120), default="")

@@ -24,6 +24,26 @@ ALERT_MINUTES = 20
 PRICE_ALERT_PCT = float(os.getenv("GOLD_PRICE_ALERT_PCT", "0.9"))
 PRICE_ALERT_MINUTES = int(os.getenv("GOLD_PRICE_ALERT_MINUTES", "45"))
 
+# هامش سوق الذهب العراقي (نسبة مئوية من سعر الشاشة):
+# سعر البيع للزبون = الشاشة + الهامش، وسعر الشراء من الزبون = الشاشة − الهامش.
+LOCAL_BUY_MARGIN_PCT = float(os.getenv("GOLD_LOCAL_BUY_MARGIN_PCT", "3.0"))
+LOCAL_SELL_MARGIN_PCT = float(os.getenv("GOLD_LOCAL_SELL_MARGIN_PCT", "3.0"))
+
+# سعر صرف السوق الموازي (السوق السوداء) — الذهب في العراق يُسعَّر به.
+PARALLEL_FX_URL = os.getenv("GOLD_PARALLEL_FX_URL", "https://iraqsm.com/data/fx.json")
+FX_MARKET_CACHE_SECONDS = int(os.getenv("GOLD_FX_MARKET_CACHE_SECONDS", "600"))
+PARALLEL_FX_FALLBACK_PREMIUM_PCT = float(
+    os.getenv("GOLD_PARALLEL_FX_FALLBACK_PREMIUM_PCT", "11.5")
+)
+
+# مراقبة سعر الصرف والتنبيه عند صعوده أو نزوله.
+RATE_SNAPSHOT_MINUTES = int(os.getenv("GOLD_RATE_SNAPSHOT_MINUTES", "10"))
+RATE_ALERT_IQD = float(os.getenv("GOLD_RATE_ALERT_IQD", "5"))
+RATE_ALERT_WINDOW_MINUTES = int(os.getenv("GOLD_RATE_ALERT_WINDOW_MINUTES", "180"))
+RATE_ALERT_COOLDOWN_MINUTES = int(
+    os.getenv("GOLD_RATE_ALERT_COOLDOWN_MINUTES", "120")
+)
+
 ADMIN_PIN = os.getenv("GOLD_ADMIN_PIN", "taha2026")
 MAX_UPLOAD_BYTES = 3 * 1024 * 1024
 ALLOWED_IMAGE_EXT = {"jpg", "jpeg", "png", "webp", "gif"}

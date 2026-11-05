@@ -27,7 +27,8 @@ class ApiClient {
     if (kIsWeb) {
       final base = Uri.base;
       final host = base.host;
-      final isLocal = host.isEmpty ||
+      final isLocal =
+          host.isEmpty ||
           host == 'localhost' ||
           host == '127.0.0.1' ||
           host == '10.0.2.2';
@@ -92,21 +93,43 @@ class ApiClient {
     Map<String, String>? query,
     int timeout = 70,
     Map<String, String>? headers,
+    int retries = 2,
   }) async {
+    for (var attempt = 0; attempt <= retries; attempt++) {
+      try {
+        final res = await http
+            .get(
+              _uri(path, query),
+              headers: {'Accept': 'application/json', ...?headers},
+            )
+            .timeout(Duration(seconds: timeout));
+        return await _decode(res);
+      } on TimeoutException {
+        throw const ApiException(
+          'انتهت مهلة الاتصال بالخادم. تحقق من الشبكة أو أوقف الـ VPN.',
+        );
+      } on ApiException {
+        rethrow;
+      } catch (e) {
+        if (attempt < retries) {
+          await Future<void>.delayed(
+            Duration(milliseconds: 600 * (attempt + 1)),
+          );
+        }
+      }
+    }
+    throw const ApiException(
+      'تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مرة أخرى.',
+    );
+  }
+
+  /// اختبار سريع للخادم قبل الاعتماد عليه.
+  Future<bool> ping({int timeout = 6}) async {
     try {
-      final res = await http
-          .get(
-            _uri(path, query),
-            headers: {'Accept': 'application/json', ...?headers},
-          )
-          .timeout(Duration(seconds: timeout));
-      return await _decode(res);
-    } on TimeoutException {
-      throw const ApiException('انتهت مهلة الاتصال بالخادم. تحقق من الشبكة.');
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      throw ApiException('تعذر الاتصال بالخادم: $e');
+      await _get('/health', timeout: timeout, retries: 0);
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -133,7 +156,9 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } catch (e) {
-      throw ApiException('تعذر الاتصال بالخادم: $e');
+      throw const ApiException(
+        'تعذر إرسال الطلب للخادم. تحقق من الإنترنت وحاول مرة أخرى.',
+      );
     }
   }
 
@@ -165,11 +190,18 @@ class ApiClient {
   }
 
   Future<Analysis> analysis({String lang = 'ar'}) async {
-    final json = await _get('/api/analysis', query: {'lang': lang}, timeout: 90);
+    final json = await _get(
+      '/api/analysis',
+      query: {'lang': lang},
+      timeout: 90,
+    );
     return Analysis.fromJson(json);
   }
 
-  Future<NewsPayload> news({String lang = 'ar', String category = 'all'}) async {
+  Future<NewsPayload> news({
+    String lang = 'ar',
+    String category = 'all',
+  }) async {
     final json = await _get(
       '/api/news',
       query: {'lang': lang, 'category': category, 'limit': '70'},
@@ -196,12 +228,16 @@ class ApiClient {
     required String platform,
     required String locale,
   }) async {
-    final json = await _send('POST', '/api/presence', body: {
-      'device_id': deviceId,
-      'platform': platform,
-      'locale': locale,
-      'app_version': '1.1.0',
-    });
+    final json = await _send(
+      'POST',
+      '/api/presence',
+      body: {
+        'device_id': deviceId,
+        'platform': platform,
+        'locale': locale,
+        'app_version': '1.1.1',
+      },
+    );
     return PresenceStats.fromJson(json);
   }
 
@@ -219,6 +255,27 @@ class ApiClient {
   Future<OwnerContact> contact() async {
     final json = await _get('/api/contact');
     return OwnerContact.fromJson(json);
+  }
+
+  /// إرسال تقييم التطبيق (نجوم 1-5 + ملاحظة اختيارية).
+  Future<Map<String, dynamic>> sendFeedback({
+    required String deviceId,
+    required int rating,
+    String comment = '',
+    String lang = 'ar',
+    String appVersion = '',
+  }) {
+    return _send(
+      'POST',
+      '/api/feedback',
+      body: {
+        'device_id': deviceId,
+        'rating': rating,
+        'comment': comment,
+        'lang': lang,
+        'app_version': appVersion,
+      },
+    );
   }
 
   Future<OwnerContact> saveContact({
@@ -241,16 +298,21 @@ class ApiClient {
     String city = '',
     bool featured = false,
   }) async {
-    final json = await _get('/api/shops', query: {
-      if (q.isNotEmpty) 'q': q,
-      if (city.isNotEmpty) 'city': city,
-      if (featured) 'featured': 'true',
-    });
+    final json = await _get(
+      '/api/shops',
+      query: {
+        if (q.isNotEmpty) 'q': q,
+        if (city.isNotEmpty) 'city': city,
+        if (featured) 'featured': 'true',
+      },
+    );
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => Shop.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => Shop.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 
@@ -258,9 +320,11 @@ class ApiClient {
     final json = await _get('/api/shops/cities');
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => ShopCity.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => ShopCity.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 
@@ -279,17 +343,22 @@ class ApiClient {
     bool featured = false,
     int limit = 40,
   }) async {
-    final json = await _get('/api/ads', query: {
-      if (placement.isNotEmpty) 'placement': placement,
-      if (category.isNotEmpty) 'category': category,
-      if (featured) 'featured': 'true',
-      'limit': '$limit',
-    });
+    final json = await _get(
+      '/api/ads',
+      query: {
+        if (placement.isNotEmpty) 'placement': placement,
+        if (category.isNotEmpty) 'category': category,
+        if (featured) 'featured': 'true',
+        'limit': '$limit',
+      },
+    );
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => AdItem.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => AdItem.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 
@@ -297,9 +366,11 @@ class ApiClient {
     final json = await _get('/api/ads/packages');
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => AdPackage.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => AdPackage.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 
@@ -326,9 +397,11 @@ class ApiClient {
     final json = await _send('GET', '/api/admin/shops', headers: _admin(pin));
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => Shop.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => Shop.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 
@@ -336,9 +409,11 @@ class ApiClient {
     final json = await _send('GET', '/api/admin/ads', headers: _admin(pin));
     return (json['items'] as List? ?? const [])
         .whereType<Map>()
-        .map((e) => AdItem.fromJson(
-              e.map((key, value) => MapEntry(key.toString(), value)),
-            ))
+        .map(
+          (e) => AdItem.fromJson(
+            e.map((key, value) => MapEntry(key.toString(), value)),
+          ),
+        )
         .toList();
   }
 

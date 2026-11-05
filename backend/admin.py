@@ -7,13 +7,14 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from .ads import PACKAGES
 from .config import ALLOWED_IMAGE_EXT, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from .database import get_db
 from .market import market_snapshot
-from .models import Ad, Alert, DeviceActivity, MediaFile, OwnerContact, Shop, SignalSnapshot
+from .models import Ad, Alert, DeviceActivity, Feedback, MediaFile, OwnerContact, Shop, SignalSnapshot
 from .security import require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -163,6 +164,12 @@ def stats(db: Session = Depends(get_db)):
             "unread": db.query(Alert).filter(Alert.is_read.is_(False)).count(),
         },
         "signals": db.query(SignalSnapshot).count(),
+        "feedback": {
+            "count": db.query(Feedback).count(),
+            "average": round(
+                float(db.query(func.avg(Feedback.rating)).scalar() or 0), 2
+            ),
+        },
         "gold_usd_oz": gold,
     }
 

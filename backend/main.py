@@ -10,12 +10,14 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from . import ads as ads_module
 from . import shops as shops_module
 from .admin import router as admin_router
-from .alerts import list_alerts, record_analysis
+from .alerts import list_alerts, record_analysis, record_rate
 from .analysis import build_analysis
 from .config import (
     ADS_CONTACT_PHONE,
@@ -29,8 +31,8 @@ from .config import (
 from .contact import router as contact_router
 from .currency import convert, currency_payload
 from .database import Base, SessionLocal, engine, get_db
-from .market import history_payload, market_snapshot
-from .models import Alert, MediaFile, OwnerContact  # noqa: F401 — لإنشاء الجدول
+from .market import history_payload, market_fx, market_snapshot
+from .models import Alert, Feedback, MediaFile, OwnerContact, RateSnapshot  # noqa: F401 — لإنشاء الجداول
 from .news import get_news
 from .presence import router as presence_router
 
@@ -76,7 +78,7 @@ app = FastAPI(
         "API لأسعار الذهب الحية، التحليل الفني والأساسي، معنويات الأخبار، "
         "دليل المحلات، الإعلانات، والعملات. أداة دعم قرار وليست نصيحة استثمارية."
     ),
-    version="1.1.0",
+    version="1.1.1",
     lifespan=lifespan,
 )
 
@@ -117,7 +119,7 @@ def health():
     return {
         "ok": True,
         "service": "gold-pulse-api",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "time": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -129,7 +131,7 @@ def config(lang: str = "ar"):
         "app_name": "Gold Pulse" if lang == "en" else "نبض الذهب",
         "app_name_ar": "نبض الذهب",
         "app_name_en": "Gold Pulse",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "owner": OWNER_NAME,
         "copyright": COPYRIGHT_EN if lang == "en" else COPYRIGHT_AR,
         "disclaimer": DISCLAIMER,
@@ -145,6 +147,7 @@ def config(lang: str = "ar"):
             "Classified ads",
             "Currency converter (IQD, USD, Toman, Lira)",
             "Signal alerts",
+            "Parallel USD/IQD rate and rate alerts",
             "Active users counter",
         ]
         if lang == "en"
@@ -157,17 +160,32 @@ def config(lang: str = "ar"):
             "إعلانات مبوبة",
             "تحويل العملات (دينار، دولار، تومان، ليرة)",
             "تنبيهات تغيّر الإشارة",
+            "سعر صرف السوق الموازي وتنبيهاته",
             "عدّاد المستخدمين الفعليين",
         ],
     }
 
 
 @app.get("/api/market")
-def market(lang: str = "ar"):
+def market(lang: str = "ar", db: Session = Depends(get_db)):
     try:
-        return market_snapshot(_lang(lang))
+        snap = market_snapshot(_lang(lang))
     except Exception as exc:
         raise HTTPException(status_code=503, detail=f"تعذر جلب بيانات السوق: {exc}")
+    try:
+        info = record_rate(db, snap.get("fx") or {}, float(snap.get("usd_oz") or 0))
+        snap["fx"].update(
+            {
+                "previous": info.get("previous"),
+                "change": info.get("change"),
+                "change_pct": info.get("change_pct"),
+                "change_today": info.get("change_today"),
+                "change_today_pct": info.get("change_today_pct"),
+            }
+        )
+    except Exception as exc:
+        logger.warning("تعذر مراقبة سعر الصرف: %s", exc)
+    return snap
 
 
 @app.get("/api/history")
@@ -264,6 +282,55 @@ def currency_convert(
         return convert(amount, source, target)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+class FeedbackIn(BaseModel):
+    device_id: str = ""
+    rating: int = 0
+    comment: str = ""
+    lang: str = "ar"
+    app_version: str = ""
+
+
+@app.post("/api/feedback")
+def submit_feedback(data: FeedbackIn, db: Session = Depends(get_db)):
+    """حفظ تقييم المستخدم (نجوم 1-5 + ملاحظة اختيارية). تقييم واحد لكل جهاز."""
+    rating = max(1, min(5, int(data.rating)))
+    device = (data.device_id or "").strip()[:120] or "anonymous"
+    comment = (data.comment or "").strip()[:1000]
+    lang = _lang(data.lang)
+    version = (data.app_version or "").strip()[:30]
+    now = datetime.utcnow()
+    row = db.query(Feedback).filter(Feedback.device_id == device).first()
+    try:
+        if row:
+            row.rating = rating
+            row.comment = comment
+            row.lang = lang
+            row.app_version = version
+            row.updated_at = now
+        else:
+            db.add(
+                Feedback(
+                    device_id=device,
+                    rating=rating,
+                    comment=comment,
+                    lang=lang,
+                    app_version=version,
+                )
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="تعذر حفظ التقييم، حاول لاحقاً")
+    average = db.query(func.avg(Feedback.rating)).scalar() or 0
+    count = db.query(Feedback).count()
+    return {
+        "ok": True,
+        "rating": rating,
+        "average": round(float(average), 2),
+        "count": count,
+    }
 
 
 @app.get("/api/media/{name}", include_in_schema=False)

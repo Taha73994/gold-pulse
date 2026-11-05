@@ -39,6 +39,7 @@ class AdsScreen extends StatelessWidget {
             Expanded(
               child: RefreshIndicator(
                 color: c.gold,
+                notificationPredicate: (_) => false,
                 onRefresh: () async {
                   await Future.wait([state.loadAds(), state.loadPackages()]);
                 },
@@ -66,7 +67,8 @@ class AdsScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       SectionHeader(
                         title: l.ads,
-                        subtitle: '${state.ads.length} ${l.pick('إعلان', 'offers')}',
+                        subtitle:
+                            '${state.ads.length} ${l.pick('إعلان', 'offers')}',
                         icon: Icons.local_offer_rounded,
                       ),
                       GridView.builder(
@@ -74,11 +76,11 @@ class AdsScreen extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
-                          childAspectRatio: 0.72,
-                        ),
+                              crossAxisCount: 2,
+                              mainAxisSpacing: 10,
+                              crossAxisSpacing: 10,
+                              childAspectRatio: 0.72,
+                            ),
                         itemCount: state.ads.length,
                         itemBuilder: (context, i) => _AdCard(
                           ad: state.ads[i],
@@ -154,9 +156,19 @@ class AdsScreen extends StatelessWidget {
               spacing: 6,
               runSpacing: 6,
               children: [
-                Pill(text: l.sponsored, color: c.gold, filled: true, fontSize: 8),
-                Pill(text: ad.displayCategory(state.en), color: c.blue, fontSize: 9),
-                if (ad.isFeatured) Pill(text: l.featured, color: c.amber, fontSize: 9),
+                Pill(
+                  text: l.sponsored,
+                  color: c.gold,
+                  filled: true,
+                  fontSize: 8,
+                ),
+                Pill(
+                  text: ad.displayCategory(state.en),
+                  color: c.blue,
+                  fontSize: 9,
+                ),
+                if (ad.isFeatured)
+                  Pill(text: l.featured, color: c.amber, fontSize: 9),
               ],
             ),
             const SizedBox(height: 10),
@@ -325,9 +337,8 @@ class _AdvertiseBanner extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           IconButton(
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AdminScreen()),
-            ),
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const AdminScreen())),
             icon: const Icon(Icons.arrow_forward_ios_rounded, size: 15),
             style: IconButton.styleFrom(
               backgroundColor: c.gold.withValues(alpha: 0.13),
@@ -345,11 +356,7 @@ class _AdCard extends StatelessWidget {
   final AppState state;
   final VoidCallback onTap;
 
-  const _AdCard({
-    required this.ad,
-    required this.state,
-    required this.onTap,
-  });
+  const _AdCard({required this.ad, required this.state, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -545,9 +552,8 @@ class _PackageCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AdminScreen()),
-              ),
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const AdminScreen())),
               icon: const Icon(Icons.add_rounded, size: 16),
               label: Text(l.postAd),
             ),

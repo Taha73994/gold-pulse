@@ -26,7 +26,11 @@ class ForecastCard extends StatelessWidget {
     final s = forecast.summary;
     final up = s.direction == 'up';
     final down = s.direction == 'down';
-    final accent = up ? c.green : down ? c.red : c.amber;
+    final accent = up
+        ? c.green
+        : down
+        ? c.red
+        : c.amber;
     final fraction = (s.upProbability / 100).clamp(0.0, 1.0);
 
     return Container(
@@ -37,10 +41,7 @@ class ForecastCard extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            c.surface,
-            accent.withValues(alpha: 0.07),
-          ],
+          colors: [c.surface, accent.withValues(alpha: 0.07)],
         ),
       ),
       child: Column(
@@ -84,10 +85,7 @@ class ForecastCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Pill(
-                text: '${s.confidence}% ${l.confidence}',
-                color: accent,
-              ),
+              Pill(text: '${s.confidence}% ${l.confidence}', color: accent),
             ],
           ),
           const SizedBox(height: 13),
@@ -150,8 +148,7 @@ class ForecastCard extends StatelessWidget {
               Expanded(
                 child: _MiniStat(
                   label: l.en ? 'Expected range' : 'النطاق المتوقع',
-                  value:
-                      l.usdRange(s.rangeLow, s.rangeHigh),
+                  value: l.usdRange(s.rangeLow, s.rangeHigh),
                   l: l,
                 ),
               ),
@@ -172,9 +169,16 @@ class ForecastCard extends StatelessWidget {
               runSpacing: 8,
               children: forecast.horizons.map((h) {
                 final hUp = h.direction == 'up';
-                final hColor = hUp ? c.green : h.direction == 'down' ? c.red : c.amber;
+                final hColor = hUp
+                    ? c.green
+                    : h.direction == 'down'
+                    ? c.red
+                    : c.amber;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 7,
+                  ),
                   decoration: BoxDecoration(
                     color: c.surfaceAlt,
                     borderRadius: BorderRadius.circular(12),
@@ -203,7 +207,11 @@ class ForecastCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       Icon(
-                        hUp ? Icons.north_east_rounded : h.direction == 'down' ? Icons.south_east_rounded : Icons.east_rounded,
+                        hUp
+                            ? Icons.north_east_rounded
+                            : h.direction == 'down'
+                            ? Icons.south_east_rounded
+                            : Icons.east_rounded,
                         size: 12,
                         color: hColor,
                       ),
@@ -260,11 +268,7 @@ class _MiniStat extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 10,
-              color: c.muted,
-            ),
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: c.muted),
           ),
           const SizedBox(height: 2),
           Text(

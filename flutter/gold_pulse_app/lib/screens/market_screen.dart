@@ -6,6 +6,8 @@ import '../widgets/app_header.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/forecast_card.dart';
+import '../widgets/local_quote_card.dart';
+import '../widgets/parallel_rate_card.dart';
 
 class MarketScreen extends StatefulWidget {
   const MarketScreen({super.key});
@@ -90,6 +92,7 @@ class _MarketScreenState extends State<MarketScreen> {
             Expanded(
               child: RefreshIndicator(
                 color: c.gold,
+                notificationPredicate: (_) => false,
                 onRefresh: () async {
                   await Future.wait([
                     state.loadMarket(),
@@ -107,6 +110,19 @@ class _MarketScreenState extends State<MarketScreen> {
                         onRetry: () => state.loadHistory(state.historyRange),
                         l: l,
                       ),
+                    if (market?.fx != null) ...[
+                      ParallelRateCard(
+                        fx: market!.fx!,
+                        officialGram24: market.iqdGramOfficial[24] ?? 0,
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+                    if (market != null &&
+                        market.local != null &&
+                        !market.local!.isEmpty) ...[
+                      LocalQuoteCard(quote: market.local!),
+                      const SizedBox(height: 14),
+                    ],
                     _HistoryCard(
                       history: history,
                       loading: state.loadingHistory,
@@ -118,7 +134,11 @@ class _MarketScreenState extends State<MarketScreen> {
                     ),
                     if (analysis != null) ...[
                       const SizedBox(height: 14),
-                      ForecastCard(forecast: analysis.forecast, l: l, compact: true),
+                      ForecastCard(
+                        forecast: analysis.forecast,
+                        l: l,
+                        compact: true,
+                      ),
                       const SizedBox(height: 14),
                       _LevelsCard(analysis: analysis, l: l),
                       const SizedBox(height: 14),
@@ -146,7 +166,10 @@ class _MarketScreenState extends State<MarketScreen> {
                         title: l.reasons,
                         icon: Icons.fact_check_outlined,
                       ),
-                      _ComponentsList(components: analysis.shortTerm.components, l: l),
+                      _ComponentsList(
+                        components: analysis.shortTerm.components,
+                        l: l,
+                      ),
                     ],
                     const SizedBox(height: 16),
                     if (analysis != null)
@@ -216,7 +239,10 @@ class _HistoryCard extends StatelessWidget {
                 SizedBox(
                   width: 14,
                   height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: c.gold),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: c.gold,
+                  ),
                 ),
             ],
           ),
@@ -228,7 +254,10 @@ class _HistoryCard extends StatelessWidget {
               return GestureDetector(
                 onTap: () => onSelect(r),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: active ? c.gold : c.surfaceAlt,
                     borderRadius: BorderRadius.circular(30),
@@ -334,7 +363,8 @@ class _LevelsCard extends StatelessWidget {
               ),
               if (levels.riskReward != null)
                 Pill(
-                  text: '${l.riskReward} 1:${l.number(levels.riskReward!, digits: 1)}',
+                  text:
+                      '${l.riskReward} 1:${l.number(levels.riskReward!, digits: 1)}',
                   color: c.blue,
                   fontSize: 9,
                 ),
@@ -351,11 +381,16 @@ class _LevelsCard extends StatelessWidget {
             children: items
                 .map(
                   (item) => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 9,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: c.surfaceAlt,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: c.border.withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: c.border.withValues(alpha: 0.6),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,7 +429,11 @@ class _LevelsCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'ATR(14) ${l.usd(levels.atr, digits: 2)} · ${l.regime}: ${analysis.regime}',
-            style: TextStyle(fontFamily: 'Cairo', fontSize: 9.5, color: c.muted),
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 9.5,
+              color: c.muted,
+            ),
           ),
         ],
       ),
@@ -416,21 +455,64 @@ class _IndicatorsCard extends StatelessWidget {
     String num(double? v) => v == null ? '—' : l.number(v, digits: 2);
 
     final rows = <(String, String, Color?)>[
-      ('RSI(14)', num(ind.rsi14),
-          ind.rsi14 == null ? null : ind.rsi14! > 70 ? c.red : ind.rsi14! < 30 ? c.green : c.ink),
-      ('MACD', num(ind.macdHist),
-          ind.macdHist == null ? null : ind.macdHist! >= 0 ? c.green : c.red),
-      ('SMA 20', num(ind.sma20),
-          ind.sma20 == null ? null : ind.close >= ind.sma20! ? c.green : c.red),
-      ('SMA 50', num(ind.sma50),
-          ind.sma50 == null ? null : ind.close >= ind.sma50! ? c.green : c.red),
-      ('SMA 200', num(ind.sma200),
-          ind.sma200 == null ? null : ind.close >= ind.sma200! ? c.green : c.red),
+      (
+        'RSI(14)',
+        num(ind.rsi14),
+        ind.rsi14 == null
+            ? null
+            : ind.rsi14! > 70
+            ? c.red
+            : ind.rsi14! < 30
+            ? c.green
+            : c.ink,
+      ),
+      (
+        'MACD',
+        num(ind.macdHist),
+        ind.macdHist == null
+            ? null
+            : ind.macdHist! >= 0
+            ? c.green
+            : c.red,
+      ),
+      (
+        'SMA 20',
+        num(ind.sma20),
+        ind.sma20 == null
+            ? null
+            : ind.close >= ind.sma20!
+            ? c.green
+            : c.red,
+      ),
+      (
+        'SMA 50',
+        num(ind.sma50),
+        ind.sma50 == null
+            ? null
+            : ind.close >= ind.sma50!
+            ? c.green
+            : c.red,
+      ),
+      (
+        'SMA 200',
+        num(ind.sma200),
+        ind.sma200 == null
+            ? null
+            : ind.close >= ind.sma200!
+            ? c.green
+            : c.red,
+      ),
       (l.pick('تقلب 20 يوم', '20d vol'), l.percent(ind.volatility20), null),
-      (l.pick('عائد 5 أيام', '5d return'), l.percent(ind.return5d, sign: true),
-          ind.return5d >= 0 ? c.green : c.red),
-      (l.pick('عائد 20 يوم', '20d return'), l.percent(ind.return20d, sign: true),
-          ind.return20d >= 0 ? c.green : c.red),
+      (
+        l.pick('عائد 5 أيام', '5d return'),
+        l.percent(ind.return5d, sign: true),
+        ind.return5d >= 0 ? c.green : c.red,
+      ),
+      (
+        l.pick('عائد 20 يوم', '20d return'),
+        l.percent(ind.return20d, sign: true),
+        ind.return20d >= 0 ? c.green : c.red,
+      ),
     ];
 
     return SurfaceCard(
@@ -521,7 +603,11 @@ class _MacroGrid extends StatelessWidget {
                 labelFor(entry.key),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: c.muted),
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 10,
+                  color: c.muted,
+                ),
               ),
               const SizedBox(height: 3),
               Row(
@@ -553,7 +639,11 @@ class _MacroGrid extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 l.pick('آخر 20 يوم', '20 days'),
-                style: TextStyle(fontFamily: 'Cairo', fontSize: 8.5, color: c.muted),
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 8.5,
+                  color: c.muted,
+                ),
               ),
             ],
           ),
@@ -581,7 +671,11 @@ class _ComponentsList extends StatelessWidget {
         children: components.map((comp) {
           final positive = comp.score > 5;
           final negative = comp.score < -5;
-          final color = positive ? c.green : negative ? c.red : c.amber;
+          final color = positive
+              ? c.green
+              : negative
+              ? c.red
+              : c.amber;
           final width = (comp.score.abs() / 100).clamp(0.0, 1.0);
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 7),

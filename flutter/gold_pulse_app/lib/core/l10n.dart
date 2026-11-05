@@ -11,9 +11,8 @@ class L10n {
 
   // ── الهوية ─────────────────────────────────────────────
   String get appName => en ? 'Gold Pulse' : 'نبض الذهب';
-  String get tagline => en
-      ? 'Your gold market guide in Iraq'
-      : 'مرشدك لسوق الذهب في العراق';
+  String get tagline =>
+      en ? 'Your gold market guide in Iraq' : 'مرشدك لسوق الذهب في العراق';
   String get owner => 'Taha Ali';
   String get copyright => en
       ? '© 2026 Taha Ali — All rights reserved'
@@ -97,12 +96,57 @@ class L10n {
   String get karat18 => en ? '18K' : '18';
   String get gram => en ? 'gram' : 'غرام';
   String get ounce => en ? 'ounce' : 'أونصة';
-  String get priceSource => en ? 'Source: Yahoo Finance' : 'المصدر: Yahoo Finance';
+  String get priceSource =>
+      en ? 'Source: Yahoo Finance' : 'المصدر: Yahoo Finance';
   String get fxSource => en ? 'FX: open.er-api.com' : 'الصرف: open.er-api.com';
   String get priceNote => en
       ? 'Global USD/oz price. The dinar price is an estimate based on the published FX rate and differs from local market prices.'
       : 'السعر العالمي بالدولار للأونصة. سعر الدينار تقديري حسب سعر الصرف المعلن ويختلف عن سوق المحلات.';
   String get changeToday => en ? 'change today' : 'تغير اليوم';
+  String get iraqLocalTitle => en ? 'Iraqi market price' : 'سعر السوق العراقي';
+  String get iraqLocalSubtitle => en
+      ? 'Selling and buying price per gram vs the screen price'
+      : 'سعر البيع والشراء للغرام مقابل سعر الشاشة';
+  String get localSellPrice => en ? 'Selling price' : 'سعر البيع';
+  String get localSellHint =>
+      en ? 'You buy at this price' : 'أنت تشتري بهذا السعر';
+  String get localBuyPrice => en ? 'Buying price' : 'سعر الشراء';
+  String get localBuyHint =>
+      en ? 'You sell at this price' : 'أنت تبيع بهذا السعر';
+  String get screenPrice => en ? 'Screen price' : 'سعر الشاشة';
+  String get screenHint => en ? 'Global reference' : 'السعر العالمي المرجعي';
+  String get localSpread => en ? 'Spread' : 'الفرق';
+  String get localSpreadHint => en ? 'Ask − bid' : 'بيع − شراء';
+  String get localEstimateNote => en
+      ? 'Estimate using the local market margin; it differs from one dealer to another.'
+      : 'تقدير حسب هامش السوق المحلي، ويختلف من محل لآخر.';
+
+  // ── سعر الصرف (السوق الموازي) ─────────────────────────
+  String get rateTitle => en ? 'USD exchange rate' : 'سعر صرف الدولار';
+  String get rateSubtitle => en
+      ? 'Parallel market (Kifah) vs the official rate'
+      : 'السوق الموازي (الكفاح) مقابل السعر الرسمي';
+  String get parallelMarket => en ? 'Parallel market' : 'السوق الموازي';
+  String get blackMarketHint => en
+      ? 'The black market rate Iraq actually trades at'
+      : 'سعر السوق السوداء الذي يتعامل به السوق العراقي';
+  String get officialCbi =>
+      en ? 'Official (Central Bank)' : 'السعر الرسمي (البنك المركزي)';
+  String get perDollar => en ? 'IQD / USD' : 'د.ع / دولار';
+  String get rateGap => en ? 'Gap vs official' : 'الفارق عن الرسمي';
+  String get rateToday => en ? 'Today' : 'تغير اليوم';
+  String get rateSellShort => en ? 'Sell' : 'بيع';
+  String get rateBuyShort => en ? 'Buy' : 'شراء';
+  String get goldUsesParallel => en
+      ? 'Gold prices in Iraq are calculated at the parallel market rate.'
+      : 'سعر الذهب في العراق محسوب بسعر صرف السوق الموازي.';
+  String get rateEstimated => en
+      ? 'Temporary estimate: the market feed is unavailable, so the official rate plus a margin is used.'
+      : 'تقدير مؤقت: تعذر جلب سعر السوق، لذا استُخدم السعر الرسمي مضافاً إليه هامش.';
+  String get rateUpdated => en ? 'Updated' : 'آخر تحديث';
+  String get rateSource => en ? 'Source' : 'المصدر';
+  String get parallelDollarShort => en ? 'Market USD' : 'دولار السوق';
+  String get officialGram24 => en ? 'Official 24K gram' : 'غرام 24 رسمي';
 
   // ── الإشارة ────────────────────────────────────────────
   String get signal => en ? 'Signal' : 'الإشارة';
@@ -127,7 +171,8 @@ class L10n {
   String get disclaimer => en ? 'Disclaimer' : 'إخلاء المسؤولية';
   String get regime => en ? 'Market regime' : 'حالة السوق';
   String get overextension => en ? 'Stretch warning' : 'تحذير التمدد';
-  String get shortTerm => en ? 'Short term (1–3 days)' : 'قصير المدى (1–3 أيام)';
+  String get shortTerm =>
+      en ? 'Short term (1–3 days)' : 'قصير المدى (1–3 أيام)';
   String get swingTerm => en ? 'Swing (1–3 weeks)' : 'متوسط المدى (1–3 أسابيع)';
   String get overall => en ? 'Overall' : 'الإجمالي';
   String get levels => en ? 'Key levels' : 'المستويات المهمة';
@@ -167,7 +212,8 @@ class L10n {
   }
 
   // ── المستشار ───────────────────────────────────────────
-  String get mentorTitle => en ? 'Your gold trading mentor' : 'مرشدك في تداول الذهب';
+  String get mentorTitle =>
+      en ? 'Your gold trading mentor' : 'مرشدك في تداول الذهب';
   String get mentorSubtitle => en
       ? 'A rules-based mentor: scenarios, risk limits and discipline — not fortune telling.'
       : 'مرشد يعمل بقواعد التداول: سيناريوهات وحدود مخاطرة وانضباط — وليس ضرباً بالغيب.';
@@ -179,10 +225,12 @@ class L10n {
   String get keyLevels => en ? 'Levels that matter' : 'المستويات التي تهم';
   String get scenarios => en ? 'If / then scenarios' : 'سيناريوهات إذا / فإن';
   String get rules => en ? 'Risk rules' : 'قواعد إدارة المخاطرة';
-  String get checklist => en ? 'Pre-trade checklist' : 'قائمة التحقق قبل الدخول';
+  String get checklist =>
+      en ? 'Pre-trade checklist' : 'قائمة التحقق قبل الدخول';
   String get mistakes => en ? 'Mistakes to avoid now' : 'أخطاء يجب تجنبها الآن';
   String get timing => en ? 'Execution timing' : 'توقيت التنفيذ';
-  String get mentorNote => en ? 'How a pro would play it' : 'كيف يلعبها المحترف';
+  String get mentorNote =>
+      en ? 'How a pro would play it' : 'كيف يلعبها المحترف';
   String get trigger => en ? 'Trigger' : 'المحفز';
   String get actionLabel => en ? 'Action' : 'الإجراء';
   String get targetLabel => en ? 'Target' : 'الهدف';
@@ -249,7 +297,8 @@ class L10n {
       ? 'Work out the real cost including making charges, commission and dealer margin.'
       : 'احسب التكلفة الحقيقية مع أجور الصياغة والعمولة وهامش التاجر.';
   String get weight => en ? 'Weight (grams)' : 'الوزن (غرام)';
-  String get makingPerGram => en ? 'Making charge / gram' : 'أجرة الصياغة / غرام';
+  String get makingPerGram =>
+      en ? 'Making charge / gram' : 'أجرة الصياغة / غرام';
   String get commissionPct => en ? 'Commission %' : 'العمولة %';
   String get marginPct => en ? 'Dealer margin %' : 'هامش التاجر %';
   String get buybackPct => en ? 'Buyback discount %' : 'خصم إعادة البيع %';
@@ -261,7 +310,8 @@ class L10n {
   String get marginCost => en ? 'Dealer margin' : 'هامش التاجر';
   String get totalPrice => en ? 'Total price' : 'السعر الإجمالي';
   String get finalPerGram => en ? 'Final price / gram' : 'السعر النهائي / غرام';
-  String get buybackValue => en ? 'Estimated buyback' : 'قيمة إعادة البيع التقديرية';
+  String get buybackValue =>
+      en ? 'Estimated buyback' : 'قيمة إعادة البيع التقديرية';
   String get calculatorNote => en
       ? 'Estimates only. Iraqi shops quote 21K most often; always confirm the day rate and the making charge in person.'
       : 'تقديرات فقط. أغلب المحلات العراقية تسعّر عيار 21، تأكد من سعر اليوم وأجرة الصياغة في المحل.';
@@ -276,7 +326,8 @@ class L10n {
   String get shopsSubtitle => en
       ? 'Verified addresses, phones and map locations.'
       : 'عناوين وأرقام هواتف ومواقع على الخريطة.';
-  String get searchShops => en ? 'Search shop or city…' : 'ابحث عن محل أو مدينة…';
+  String get searchShops =>
+      en ? 'Search shop or city…' : 'ابحث عن محل أو مدينة…';
   String get allCities => en ? 'All cities' : 'كل المدن';
   String get featured => en ? 'Featured' : 'مميز';
   String get verified => en ? 'Verified' : 'موثّق';
@@ -376,11 +427,15 @@ class L10n {
   String get alertGuide3 => en
       ? 'Price alerts above 1.5% tell you to check the reason before acting.'
       : 'تنبيهات الحركة فوق 1.5% تطلب منك معرفة السبب قبل التصرف.';
+  String get alertGuide4 => en
+      ? 'Exchange-rate alerts fire when the parallel dollar moves enough to change gold prices.'
+      : 'تنبيهات سعر الصرف تصل عند تحرك دولار السوق الموازي بما يؤثر على سعر الذهب.';
   String get signalHistory => en ? 'Signal history' : 'سجل الإشارات';
   String get markRead => en ? 'Mark read' : 'تعليم كمقروء';
   String get priceAlert => en ? 'Price move' : 'حركة سعر';
   String get signalAlert => en ? 'Signal change' : 'تغير إشارة';
   String get momentumAlert => en ? 'Momentum' : 'زخم';
+  String get rateAlert => en ? 'Exchange rate' : 'سعر الصرف';
   String get systemAlert => en ? 'System' : 'النظام';
 
   String kind(String code) {
@@ -391,6 +446,8 @@ class L10n {
         return priceAlert;
       case 'momentum':
         return momentumAlert;
+      case 'rate':
+        return rateAlert;
       default:
         return systemAlert;
     }
@@ -419,6 +476,27 @@ class L10n {
       ? 'The total user count is public. Detailed breakdowns are visible to the owner only.'
       : 'العدد الكلي للمستخدمين ظاهر للجميع، أما التفاصيل فتُعرض للمالك فقط.';
 
+  // ── الخصوصية والتقييم ──────────────────────────────────
+  String get privacyPolicy => en ? 'Privacy policy' : 'سياسة الخصوصية';
+  String get privacyUpdated =>
+      en ? 'Last updated: November 2026' : 'آخر تحديث: تشرين الثاني 2026';
+  String get rateApp => en ? 'Rate the app' : 'قيّم التطبيق';
+  String get ratingTitle =>
+      en ? 'How is your experience?' : 'كيف تجربتك مع التطبيق؟';
+  String get ratingSubtitle => en
+      ? 'Your rating helps us improve the app.'
+      : 'تقييمك يساعدنا على تحسين التطبيق.';
+  String get rateCommentHint =>
+      en ? 'A note for the developer (optional)' : 'ملاحظة للمطوّر (اختياري)';
+  String get rateSend => en ? 'Send rating' : 'إرسال التقييم';
+  String get rateThanks =>
+      en ? 'Thank you! Your rating was saved.' : 'شكراً لك! تم حفظ تقييمك.';
+  String get rateError => en
+      ? 'Could not send the rating. Try again.'
+      : 'تعذر إرسال التقييم. حاول مرة أخرى.';
+  String get rateChange => en ? 'Change my rating' : 'تغيير تقييمي';
+  String get valuesTitle => en ? 'Our values' : 'قيم التطبيق';
+
   // ── الإعدادات ──────────────────────────────────────────
   String get language => en ? 'Language' : 'اللغة';
   String get arabic => 'العربية';
@@ -427,17 +505,11 @@ class L10n {
   String get systemTheme => en ? 'System' : 'النظام';
   String get lightTheme => en ? 'Light' : 'نهاري';
   String get darkTheme => en ? 'Dark' : 'ليلي';
-  String get apiBase => en ? 'API server address' : 'عنوان خادم البيانات';
-  String get apiHint => en
-      ? 'Example: http://192.168.1.20:8010'
-      : 'مثال: http://192.168.1.20:8010';
-  String get testConnection => en ? 'Test connection' : 'اختبار الاتصال';
-  String get connected => en ? 'Connected successfully' : 'تم الاتصال بنجاح';
-  String get connectionFailed => en ? 'Connection failed' : 'فشل الاتصال';
   String get resetSettings => en ? 'Reset settings' : 'إعادة ضبط الإعدادات';
+  String get connectionFailed => en ? 'Connection failed' : 'فشل الاتصال';
   String get resetConfirm => en
-      ? 'Reset language, theme and server address?'
-      : 'إعادة ضبط اللغة والمظهر وعنوان الخادم؟';
+      ? 'Reset language, theme and display settings?'
+      : 'إعادة ضبط اللغة والمظهر وإعدادات العرض؟';
   String get autoRefresh => en ? 'Auto refresh' : 'التحديث التلقائي';
   String get autoRefreshNote => en
       ? 'Prices every 2 minutes, analysis every 10 minutes.'
@@ -464,7 +536,8 @@ class L10n {
   String get addNew => en ? 'Add new' : 'إضافة جديد';
   String get deleteConfirm =>
       en ? 'Are you sure you want to delete?' : 'هل أنت متأكد من الحذف؟';
-  String get revenue => en ? 'Estimated ad revenue' : 'إيرادات الإعلانات التقديرية';
+  String get revenue =>
+      en ? 'Estimated ad revenue' : 'إيرادات الإعلانات التقديرية';
   String get totalShops => en ? 'Shops' : 'المحلات';
   String get totalAds => en ? 'Ads' : 'الإعلانات';
   String get totalAlerts => en ? 'Alerts' : 'التنبيهات';
@@ -493,10 +566,12 @@ class L10n {
   String get contactSubtitle => en
       ? 'Only the channels the owner filled in are shown.'
       : 'تظهر فقط وسائل التواصل التي أضافها المالك.';
-  String get contactSaved => en ? 'Contact details saved' : 'تم حفظ بيانات التواصل';
+  String get contactSaved =>
+      en ? 'Contact details saved' : 'تم حفظ بيانات التواصل';
   String get contactTab => en ? 'Contact' : 'التواصل';
   String get contactName => en ? 'Display name' : 'الاسم الظاهر';
-  String get contactPlaceholderPhone => en ? '+964 7XX XXX XXXX' : '+964 7XX XXX XXXX';
+  String get contactPlaceholderPhone =>
+      en ? '+964 7XX XXX XXXX' : '+964 7XX XXX XXXX';
   String get contactPlaceholderTelegram => en ? '@username' : '@username';
   String get websiteLink => en ? 'Link' : 'الرابط';
   String get verifiedLabel => en ? 'Verified shop' : 'محل موثّق';
@@ -510,8 +585,10 @@ class L10n {
   String get adminPinSettings => en ? 'Owner PIN' : 'رمز المالك';
   String get savePin => en ? 'Save PIN' : 'حفظ الرمز';
   String get openAdmin => en ? 'Open dashboard' : 'فتح لوحة التحكم';
-  String get noShopsAdmin => en ? 'No shops yet — add the first one.' : 'لا توجد محلات — أضف الأول.';
-  String get noAdsAdmin => en ? 'No ads yet — add the first one.' : 'لا توجد إعلانات — أضف الأول.';
+  String get noShopsAdmin =>
+      en ? 'No shops yet — add the first one.' : 'لا توجد محلات — أضف الأول.';
+  String get noAdsAdmin =>
+      en ? 'No ads yet — add the first one.' : 'لا توجد إعلانات — أضف الأول.';
   String get requiredField => en ? 'Required' : 'مطلوب';
   String get invalidNumber => en ? 'Enter a valid number' : 'أدخل رقماً صحيحاً';
   String get pinned => en ? 'Pinned' : 'مثبّت';
@@ -592,7 +669,8 @@ class L10n {
   String moneyUsd(num value, {int digits = 2}) =>
       '\$${number(value, digits: digits)}';
 
-  String usd(num value, {int digits = 2}) => '\$${number(value, digits: digits)}';
+  String usd(num value, {int digits = 2}) =>
+      '\$${number(value, digits: digits)}';
   String iqd(num value) => '${number(value)} ${en ? 'IQD' : 'د.ع'}';
 
   /// نطاق سعري بالدولار يبقى مقروءاً من اليسار لليمين داخل النص العربي.

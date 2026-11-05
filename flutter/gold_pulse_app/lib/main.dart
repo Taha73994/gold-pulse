@@ -68,8 +68,9 @@ class _GoldPulseRootState extends State<GoldPulseRoot> {
             ],
             builder: (context, child) {
               return Directionality(
-                textDirection:
-                    _state.en ? TextDirection.ltr : TextDirection.rtl,
+                textDirection: _state.en
+                    ? TextDirection.ltr
+                    : TextDirection.rtl,
                 child: child ?? const SizedBox.shrink(),
               );
             },
@@ -171,7 +172,7 @@ class ShellScreen extends StatefulWidget {
   State<ShellScreen> createState() => _ShellScreenState();
 }
 
-class _ShellScreenState extends State<ShellScreen> {
+class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
   int _index = _initialIndex();
 
   static int _initialIndex() {
@@ -193,14 +194,28 @@ class _ShellScreenState extends State<ShellScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final screen = Uri.base.queryParameters['screen'];
     if (screen == null || screen.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => _screenFor(screen)),
-      );
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => _screenFor(screen)));
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // عند العودة للتطبيق: تحديث صامت دون أن يرى المستخدم أي مؤشر.
+    if (state == AppLifecycleState.resumed && mounted) {
+      AppScope.of(context).refreshAll(silent: true);
+    }
   }
 
   Widget _screenFor(String screen) {

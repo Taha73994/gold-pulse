@@ -66,8 +66,7 @@ Future<void> showPlanSheet(BuildContext context, AppState state) async {
                   Expanded(
                     child: _PlanStat(
                       label: l.entryZone,
-                      value:
-                          l.usdRange(plan.entryLow, plan.entryHigh),
+                      value: l.usdRange(plan.entryLow, plan.entryHigh),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -91,50 +90,55 @@ Future<void> showPlanSheet(BuildContext context, AppState state) async {
               Text(l.plan, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               ...plan.steps.asMap().entries.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 9),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 22,
-                            height: 22,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: c.gold.withValues(alpha: 0.14),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Text(
-                              '${entry.key + 1}',
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: c.gold,
-                              ),
-                            ),
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 9),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 22,
+                        height: 22,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: c.gold.withValues(alpha: 0.14),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${entry.key + 1}',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            color: c.gold,
                           ),
-                          const SizedBox(width: 9),
-                          Expanded(
-                            child: Text(
-                              entry.value,
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: 13,
-                                height: 1.55,
-                                color: c.ink,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          entry.value,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 13,
+                            height: 1.55,
+                            color: c.ink,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
               if (plan.watch.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                Text(l.catalysts, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  l.catalysts,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 8),
-                ...plan.watch.take(5).map(
+                ...plan.watch
+                    .take(5)
+                    .map(
                       (item) => Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(11),
@@ -197,10 +201,7 @@ Future<void> showPlanSheet(BuildContext context, AppState state) async {
                 ),
               ),
               const SizedBox(height: 12),
-              DisclaimerBox(
-                label: l.disclaimer,
-                text: analysis.disclaimer,
-              ),
+              DisclaimerBox(label: l.disclaimer, text: analysis.disclaimer),
             ],
           );
         },
@@ -230,11 +231,7 @@ class _PlanStat extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 10,
-              color: c.muted,
-            ),
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 10, color: c.muted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

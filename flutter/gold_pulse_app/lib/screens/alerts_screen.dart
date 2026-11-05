@@ -43,6 +43,7 @@ class AlertsScreen extends StatelessWidget {
             Expanded(
               child: RefreshIndicator(
                 color: c.gold,
+                notificationPredicate: (_) => false,
                 onRefresh: () => state.loadAlerts(),
                 child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -100,7 +101,11 @@ class AlertsScreen extends StatelessWidget {
       builder: (context) => AlertDialog(
         title: Text(
           alert.displayTitle(state.en),
-          style: const TextStyle(fontFamily: 'Cairo', fontSize: 16, height: 1.4),
+          style: const TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: 16,
+            height: 1.4,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -108,7 +113,11 @@ class AlertsScreen extends StatelessWidget {
           children: [
             Text(
               alert.displayBody(state.en),
-              style: const TextStyle(fontFamily: 'Cairo', fontSize: 13, height: 1.6),
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 13,
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 10),
             Text(
@@ -139,7 +148,7 @@ class _GuideCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    final items = [l.alertGuide1, l.alertGuide2, l.alertGuide3];
+    final items = [l.alertGuide1, l.alertGuide2, l.alertGuide3, l.alertGuide4];
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -221,8 +230,8 @@ class _AlertCard extends StatelessWidget {
     final color = alert.severity == 'high'
         ? c.red
         : alert.severity == 'medium'
-            ? c.amber
-            : c.blue;
+        ? c.amber
+        : c.blue;
     final icon = switch (alert.kind) {
       'forecast' => Icons.insights_rounded,
       'signal' => Icons.radar_rounded,
@@ -237,9 +246,7 @@ class _AlertCard extends StatelessWidget {
         color: alert.isRead ? c.surface : c.surface,
         borderRadius: BorderRadius.circular(17),
         border: Border.all(
-          color: alert.isRead
-              ? c.border
-              : color.withValues(alpha: 0.45),
+          color: alert.isRead ? c.border : color.withValues(alpha: 0.45),
           width: alert.isRead ? 1 : 1.4,
         ),
       ),
@@ -285,8 +292,9 @@ class _AlertCard extends StatelessWidget {
                                 fontFamily: 'Cairo',
                                 fontSize: 12.5,
                                 height: 1.45,
-                                fontWeight:
-                                    alert.isRead ? FontWeight.w600 : FontWeight.w800,
+                                fontWeight: alert.isRead
+                                    ? FontWeight.w600
+                                    : FontWeight.w800,
                                 color: c.ink,
                               ),
                             ),
@@ -321,8 +329,8 @@ class _AlertCard extends StatelessWidget {
                                 alert.action == 'BUY'
                                     ? 'green'
                                     : alert.action == 'SELL'
-                                        ? 'red'
-                                        : 'orange',
+                                    ? 'red'
+                                    : 'orange',
                                 c,
                               ),
                               fontSize: 8,
@@ -366,7 +374,11 @@ class _HistoryCard extends StatelessWidget {
         children: points.take(12).map((p) {
           final up = p.action == 'BUY' || p.action == 'ACCUMULATE';
           final down = p.action == 'SELL' || p.action == 'REDUCE';
-          final color = up ? c.green : down ? c.red : c.amber;
+          final color = up
+              ? c.green
+              : down
+              ? c.red
+              : c.amber;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 7),
             child: Row(
@@ -374,7 +386,10 @@ class _HistoryCard extends StatelessWidget {
                 Container(
                   width: 7,
                   height: 7,
-                  decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(

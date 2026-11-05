@@ -197,10 +197,7 @@ class AppTheme {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
-          return IconThemeData(
-            size: 23,
-            color: selected ? c.gold : c.muted,
-          );
+          return IconThemeData(size: 23, color: selected ? c.gold : c.muted);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
@@ -216,9 +213,15 @@ class AppTheme {
         filled: true,
         fillColor: c.surfaceAlt,
         hintStyle: TextStyle(fontFamily: 'Cairo', color: c.muted, fontSize: 13),
-        labelStyle: TextStyle(fontFamily: 'Cairo', color: c.muted, fontSize: 13),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        labelStyle: TextStyle(
+          fontFamily: 'Cairo',
+          color: c.muted,
+          fontSize: 13,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: c.border),
@@ -239,12 +242,14 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: c.gold,
-          foregroundColor:
-              brightness == Brightness.dark ? const Color(0xFF161204) : Colors.white,
+          foregroundColor: brightness == Brightness.dark
+              ? const Color(0xFF161204)
+              : Colors.white,
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(
             fontFamily: 'Cairo',
             fontSize: 14,
@@ -258,8 +263,9 @@ class AppTheme {
           minimumSize: const Size(0, 46),
           padding: const EdgeInsets.symmetric(horizontal: 18),
           side: BorderSide(color: c.border),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(
             fontFamily: 'Cairo',
             fontSize: 13,

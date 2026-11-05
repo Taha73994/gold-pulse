@@ -91,6 +91,21 @@ class AboutScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _InfoCard(
+                    icon: Icons.workspace_premium_outlined,
+                    title: l.valuesTitle,
+                    body: l.pick(
+                      '• الشفافية: كل رقم له مصدر معلن.\n'
+                          '• الخصوصية أولاً: بدون حساب أو بيانات شخصية.\n'
+                          '• الصدق: احتمالات لا وعود، وليست نصيحة استثمارية.\n'
+                          '• عراقي أولاً: الدينار والعيارات وسوق المحلات المحلية.',
+                      '• Transparency: every number has a stated source.\n'
+                          '• Privacy first: no account, no personal data.\n'
+                          '• Honesty: probabilities, not promises; not investment advice.\n'
+                          '• Iraq first: the dinar, local karats and neighbourhood gold shops.',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _InfoCard(
                     icon: Icons.storage_rounded,
                     title: l.dataSources,
                     body: l.dataSourcesText,
@@ -140,7 +155,11 @@ class AboutScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Icon(Icons.chevron_left_rounded, size: 18, color: c.muted),
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          size: 18,
+                          color: c.muted,
+                        ),
                       ],
                     ),
                   ),
@@ -192,9 +211,7 @@ class _OwnerUsersCard extends StatelessWidget {
     final d = state.presenceDetails;
     String formatter(Map<String, int> map) => map.isEmpty
         ? '—'
-        : map.entries
-            .map((e) => '${e.key}: ${e.value}')
-            .join(' · ');
+        : map.entries.map((e) => '${e.key}: ${e.value}').join(' · ');
 
     return SurfaceCard(
       padding: const EdgeInsets.all(14),
@@ -246,9 +263,8 @@ class _OwnerUsersCard extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AdminScreen()),
-              ),
+              onPressed: () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const AdminScreen())),
               icon: const Icon(Icons.dashboard_customize_outlined, size: 16),
               label: Text(l.dashboard),
             ),

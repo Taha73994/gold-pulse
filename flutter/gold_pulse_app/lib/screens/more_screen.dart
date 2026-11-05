@@ -4,6 +4,7 @@ import '../core/theme.dart';
 import '../widgets/app_header.dart';
 import '../widgets/common.dart';
 import '../widgets/owner_contact_card.dart';
+import '../widgets/rate_sheet.dart';
 import 'about_screen.dart';
 import 'admin_screen.dart';
 import 'ads_screen.dart';
@@ -11,6 +12,7 @@ import 'alerts_screen.dart';
 import 'calculator_screen.dart';
 import 'currency_screen.dart';
 import 'news_screen.dart';
+import 'privacy_screen.dart';
 import 'settings_screen.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -22,17 +24,51 @@ class MoreScreen extends StatelessWidget {
     final l = state.l;
     final c = AppColors.of(context);
 
-    final tools = <(IconData, String, Widget)>[
-      (Icons.calculate_rounded, l.calculator, const CalculatorScreen()),
-      (Icons.currency_exchange_rounded, l.currencies, const CurrencyScreen()),
-      (Icons.newspaper_rounded, l.news, const NewsScreen()),
-      (Icons.notifications_active_outlined, l.alerts, const AlertsScreen()),
-      (Icons.campaign_rounded, l.ads, const AdsScreen()),
-      (Icons.settings_outlined, l.settings, const SettingsScreen()),
-      (Icons.info_outline_rounded, l.about, const AboutScreen()),
+    final tools = <(IconData, String, VoidCallback)>[
+      (
+        Icons.calculate_rounded,
+        l.calculator,
+        () => _push(context, const CalculatorScreen()),
+      ),
+      (
+        Icons.currency_exchange_rounded,
+        l.currencies,
+        () => _push(context, const CurrencyScreen()),
+      ),
+      (
+        Icons.newspaper_rounded,
+        l.news,
+        () => _push(context, const NewsScreen()),
+      ),
+      (
+        Icons.notifications_active_outlined,
+        l.alerts,
+        () => _push(context, const AlertsScreen()),
+      ),
+      (Icons.campaign_rounded, l.ads, () => _push(context, const AdsScreen())),
+      (Icons.star_rounded, l.rateApp, () => showRateSheet(context)),
+      (
+        Icons.privacy_tip_outlined,
+        l.privacyPolicy,
+        () => _push(context, const PrivacyScreen()),
+      ),
+      (
+        Icons.settings_outlined,
+        l.settings,
+        () => _push(context, const SettingsScreen()),
+      ),
+      (
+        Icons.info_outline_rounded,
+        l.about,
+        () => _push(context, const AboutScreen()),
+      ),
       // لوحة المالك لا تظهر إلا لمن سجّل دخوله برمز المالك.
       if (state.isOwner)
-        (Icons.admin_panel_settings_outlined, l.admin, const AdminScreen()),
+        (
+          Icons.admin_panel_settings_outlined,
+          l.admin,
+          () => _push(context, const AdminScreen()),
+        ),
     ];
 
     return Scaffold(
@@ -68,18 +104,13 @@ class MoreScreen extends StatelessWidget {
                           (tool) => _ToolTile(
                             icon: tool.$1,
                             label: tool.$2,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => tool.$3),
-                            ),
+                            onTap: tool.$3,
                           ),
                         )
                         .toList(),
                   ),
                   const SizedBox(height: 16),
-                  SectionHeader(
-                    title: l.settings,
-                    icon: Icons.tune_rounded,
-                  ),
+                  SectionHeader(title: l.settings, icon: Icons.tune_rounded),
                   SurfaceCard(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -91,7 +122,8 @@ class MoreScreen extends StatelessWidget {
                           icon: Icons.language_rounded,
                           label: l.language,
                           value: state.en ? l.english : l.arabic,
-                          onTap: () => state.setLanguage(state.en ? 'ar' : 'en'),
+                          onTap: () =>
+                              state.setLanguage(state.en ? 'ar' : 'en'),
                         ),
                         Divider(color: c.border, height: 1),
                         _SettingRow(
@@ -121,7 +153,9 @@ class MoreScreen extends StatelessWidget {
                           label: l.activeUsers,
                           value: '${state.presence.totalUsers}',
                           onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => const AboutScreen()),
+                            MaterialPageRoute(
+                              builder: (_) => const AboutScreen(),
+                            ),
                           ),
                         ),
                       ],
@@ -198,6 +232,10 @@ class MoreScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _push(BuildContext context, Widget page) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 }
 

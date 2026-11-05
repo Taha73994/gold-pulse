@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/app_state.dart';
@@ -110,7 +110,9 @@ class _AdminScreenState extends State<AdminScreen> {
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : Text(l.login),
                         ),
@@ -312,13 +314,8 @@ class _OverviewTab extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          '${l.apiBase}: ${state.api.normalizedBase}',
-          textDirection: TextDirection.ltr,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 9.5,
-            color: c.muted,
-          ),
+          state.en ? 'Server: cloud · connected' : 'الخادم: سحابي · متصل',
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 9.5, color: c.muted),
         ),
       ],
     );
@@ -435,7 +432,8 @@ class _ShopsTab extends StatelessWidget {
                             visualDensity: VisualDensity.compact,
                           ),
                           IconButton(
-                            onPressed: () => _confirmDeleteShop(context, state, shop),
+                            onPressed: () =>
+                                _confirmDeleteShop(context, state, shop),
                             icon: Icon(
                               Icons.delete_outline_rounded,
                               size: 17,
@@ -547,11 +545,19 @@ class _AdsTab extends StatelessWidget {
                                 ),
                               ),
                               if (!ad.isActive)
-                                Pill(text: l.inactive, color: c.red, fontSize: 8),
+                                Pill(
+                                  text: l.inactive,
+                                  color: c.red,
+                                  fontSize: 8,
+                                ),
                               if (ad.isFeatured)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 4),
-                                  child: Pill(text: l.featured, color: c.gold, fontSize: 8),
+                                  child: Pill(
+                                    text: l.featured,
+                                    color: c.gold,
+                                    fontSize: 8,
+                                  ),
                                 ),
                             ],
                           ),
@@ -579,8 +585,12 @@ class _AdsTab extends StatelessWidget {
                                 ),
                               ),
                               TextButton.icon(
-                                onPressed: () => _confirmDeleteAd(context, state, ad),
-                                icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                                onPressed: () =>
+                                    _confirmDeleteAd(context, state, ad),
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  size: 15,
+                                ),
                                 label: Text(l.delete),
                                 style: TextButton.styleFrom(
                                   foregroundColor: c.red,
@@ -653,9 +663,8 @@ Future<String?> _pickAndUpload(BuildContext context, String current) async {
     return url;
   } catch (e) {
     if (!context.mounted) return current;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${state.l.uploadImage}: $e')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('${state.l.uploadImage}: $e')));
     return current;
   }
 }
@@ -685,15 +694,22 @@ Widget _imagePickerBlock(
                 child: url.isEmpty
                     ? Container(
                         color: c.surfaceAlt,
-                        child: Icon(Icons.image_outlined, color: c.gold, size: 24),
+                        child: Icon(
+                          Icons.image_outlined,
+                          color: c.gold,
+                          size: 24,
+                        ),
                       )
                     : Image.network(
                         state.api.mediaUrl(url),
                         fit: BoxFit.cover,
                         errorBuilder: (_, _, _) => Container(
                           color: c.surfaceAlt,
-                          child: Icon(Icons.broken_image_outlined,
-                              color: c.muted, size: 22),
+                          child: Icon(
+                            Icons.broken_image_outlined,
+                            color: c.muted,
+                            size: 22,
+                          ),
                         ),
                       ),
               ),
@@ -703,7 +719,10 @@ Widget _imagePickerBlock(
               child: OutlinedButton.icon(
                 onPressed: onPick,
                 icon: const Icon(Icons.upload_rounded, size: 16),
-                label: Text(l.uploadImage, style: const TextStyle(fontSize: 11)),
+                label: Text(
+                  l.uploadImage,
+                  style: const TextStyle(fontSize: 11),
+                ),
               ),
             ),
           ],
@@ -897,9 +916,13 @@ class _ShopFormState extends State<_ShopForm> {
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: _AdminField(controller: _city, label: l.cityLabel)),
+                Expanded(
+                  child: _AdminField(controller: _city, label: l.cityLabel),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: _AdminField(controller: _cityEn, label: l.cityEnLabel)),
+                Expanded(
+                  child: _AdminField(controller: _cityEn, label: l.cityEnLabel),
+                ),
               ],
             ),
             const SizedBox(height: 10),
@@ -929,7 +952,11 @@ class _ShopFormState extends State<_ShopForm> {
             const SizedBox(height: 10),
             _AdminField(controller: _hours, label: l.workingHours),
             const SizedBox(height: 10),
-            _AdminField(controller: _description, label: l.description, maxLines: 3),
+            _AdminField(
+              controller: _description,
+              label: l.description,
+              maxLines: 3,
+            ),
             const SizedBox(height: 10),
             _AdminField(
               controller: _descriptionEn,
@@ -978,21 +1005,30 @@ class _ShopFormState extends State<_ShopForm> {
             const SizedBox(height: 6),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: Text(l.verifiedLabel, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              title: Text(
+                l.verifiedLabel,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
               value: _verified,
               activeThumbColor: c.gold,
               onChanged: (v) => setState(() => _verified = v),
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: Text(l.featuredLabel, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              title: Text(
+                l.featuredLabel,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
               value: _featured,
               activeThumbColor: c.gold,
               onChanged: (v) => setState(() => _featured = v),
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: Text(l.activeLabel, style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              title: Text(
+                l.activeLabel,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
               value: _active,
               activeThumbColor: c.gold,
               onChanged: (v) => setState(() => _active = v),
@@ -1002,14 +1038,20 @@ class _ShopFormState extends State<_ShopForm> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   _error!,
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: c.red),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 11,
+                    color: c.red,
+                  ),
                 ),
               ),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                    onPressed: _saving
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: Text(l.cancel),
                   ),
                 ),
@@ -1046,7 +1088,14 @@ Future<void> showAdForm(BuildContext context, {AdItem? ad}) async {
   );
 }
 
-const _categories = ['general', 'jewelry', 'gold', 'watches', 'services', 'electronics'];
+const _categories = [
+  'general',
+  'jewelry',
+  'gold',
+  'watches',
+  'services',
+  'electronics',
+];
 const _placements = ['home', 'shops', 'news', 'market'];
 
 class _AdForm extends StatefulWidget {
@@ -1086,7 +1135,9 @@ class _AdFormState extends State<_AdForm> {
     _titleEn = TextEditingController(text: a?.titleEn ?? '');
     _description = TextEditingController(text: a?.description ?? '');
     _descriptionEn = TextEditingController(text: a?.descriptionEn ?? '');
-    _price = TextEditingController(text: a == null || a.price == 0 ? '' : '${a.price}');
+    _price = TextEditingController(
+      text: a == null || a.price == 0 ? '' : '${a.price}',
+    );
     _currency = TextEditingController(text: a?.currency ?? 'IQD');
     _phone = TextEditingController(text: a?.phone ?? '');
     _whatsapp = TextEditingController(text: a?.whatsapp ?? '');
@@ -1198,7 +1249,11 @@ class _AdFormState extends State<_AdForm> {
             const SizedBox(height: 10),
             _AdminField(controller: _titleEn, label: l.adTitleEn),
             const SizedBox(height: 10),
-            _AdminField(controller: _description, label: l.description, maxLines: 3),
+            _AdminField(
+              controller: _description,
+              label: l.description,
+              maxLines: 3,
+            ),
             const SizedBox(height: 10),
             _AdminField(
               controller: _descriptionEn,
@@ -1212,7 +1267,9 @@ class _AdFormState extends State<_AdForm> {
                   child: _AdminField(
                     controller: _price,
                     label: l.price,
-                    keyboard: const TextInputType.numberWithOptions(decimal: true),
+                    keyboard: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1246,10 +1303,10 @@ class _AdFormState extends State<_AdForm> {
                             v == 'home'
                                 ? l.pick('الرئيسية', 'Home')
                                 : v == 'shops'
-                                    ? l.pick('المحلات', 'Shops')
-                                    : v == 'news'
-                                        ? l.pick('الأخبار', 'News')
-                                        : l.pick('السوق', 'Market'),
+                                ? l.pick('المحلات', 'Shops')
+                                : v == 'news'
+                                ? l.pick('الأخبار', 'News')
+                                : l.pick('السوق', 'Market'),
                           ),
                         )
                         .toList(),
@@ -1265,8 +1322,8 @@ class _AdFormState extends State<_AdForm> {
               items: state.packages.isEmpty
                   ? const [MapEntry('basic', 'Basic')]
                   : state.packages
-                      .map((p) => MapEntry(p.code, p.displayName(state.en)))
-                      .toList(),
+                        .map((p) => MapEntry(p.code, p.displayName(state.en)))
+                        .toList(),
               onChanged: (v) => setState(() => _package = v),
             ),
             const SizedBox(height: 10),
@@ -1313,16 +1370,20 @@ class _AdFormState extends State<_AdForm> {
             const SizedBox(height: 6),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: Text(l.featuredLabel,
-                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              title: Text(
+                l.featuredLabel,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
               value: _featured,
               activeThumbColor: c.gold,
               onChanged: (v) => setState(() => _featured = v),
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: Text(l.activeLabel,
-                  style: const TextStyle(fontFamily: 'Cairo', fontSize: 12)),
+              title: Text(
+                l.activeLabel,
+                style: const TextStyle(fontFamily: 'Cairo', fontSize: 12),
+              ),
               value: _active,
               activeThumbColor: c.gold,
               onChanged: (v) => setState(() => _active = v),
@@ -1332,14 +1393,20 @@ class _AdFormState extends State<_AdForm> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
                   _error!,
-                  style: TextStyle(fontFamily: 'Cairo', fontSize: 11, color: c.red),
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 11,
+                    color: c.red,
+                  ),
                 ),
               ),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: _saving ? null : () => Navigator.of(context).pop(),
+                    onPressed: _saving
+                        ? null
+                        : () => Navigator.of(context).pop(),
                     child: Text(l.cancel),
                   ),
                 ),
@@ -1422,7 +1489,9 @@ class _ContactTabState extends State<_ContactTab> {
     setState(() {
       _saving = false;
       _saved = ok;
-      if (!ok) _error = widget.state.adminError ?? widget.state.l.connectionFailed;
+      if (!ok) {
+        _error = widget.state.adminError ?? widget.state.l.connectionFailed;
+      }
     });
   }
 
@@ -1459,10 +1528,7 @@ class _ContactTabState extends State<_ContactTab> {
           keyboard: TextInputType.phone,
         ),
         const SizedBox(height: 10),
-        _AdminField(
-          controller: _telegram,
-          label: l.contactTelegram,
-        ),
+        _AdminField(controller: _telegram, label: l.contactTelegram),
         const SizedBox(height: 10),
         _AdminField(
           controller: _email,
@@ -1587,11 +1653,7 @@ class _DropdownField extends StatelessWidget {
             isExpanded: true,
             dropdownColor: c.surfaceAlt,
             icon: Icon(Icons.expand_more_rounded, color: c.muted, size: 18),
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 12,
-              color: c.ink,
-            ),
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 12, color: c.ink),
             items: items
                 .map(
                   (e) => DropdownMenuItem<String>(

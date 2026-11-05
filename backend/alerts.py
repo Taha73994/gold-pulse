@@ -4,8 +4,18 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
 
-from .config import ALERT_MINUTES, DISCLAIMER, PRICE_ALERT_MINUTES, PRICE_ALERT_PCT
-from .models import Alert, SignalSnapshot
+from .config import (
+    ALERT_MINUTES,
+    DISCLAIMER,
+    OUNCE_GRAMS,
+    PRICE_ALERT_MINUTES,
+    PRICE_ALERT_PCT,
+    RATE_ALERT_COOLDOWN_MINUTES,
+    RATE_ALERT_IQD,
+    RATE_ALERT_WINDOW_MINUTES,
+    RATE_SNAPSHOT_MINUTES,
+)
+from .models import Alert, RateSnapshot, SignalSnapshot
 
 ACTION_AR = {
     "BUY": "شراء",
@@ -264,6 +274,133 @@ def record_analysis(db: Session, analysis: dict) -> list[Alert]:
         db.add_all(alerts)
     db.commit()
     return alerts
+
+
+def record_rate(db: Session, fx: dict, usd_oz: float = 0) -> dict:
+    """يراقب سعر صرف السوق الموازي ويولّد تنبيهاً عند صعوده أو نزوله.
+
+    المقارنة تكون مع قراءة قديمة لا تقل عن RATE_ALERT_WINDOW_MINUTES،
+    مع كتم التنبيهات المتكررة خلال RATE_ALERT_COOLDOWN_MINUTES.
+    """
+    now = datetime.utcnow()
+    parallel = float(fx.get("parallel_sell") or fx.get("parallel_mid") or 0)
+    official = float(fx.get("official") or 0)
+    gap = float(fx.get("gap_pct") or 0)
+    source = str(fx.get("source") or "")
+    info = {
+        "parallel": round(parallel, 2),
+        "official": round(official, 2),
+        "gap_pct": round(gap, 2),
+        "previous": None,
+        "change": 0.0,
+        "change_pct": 0.0,
+        "change_today": 0.0,
+        "change_today_pct": 0.0,
+        "published_at": fx.get("published_at") or "",
+        "estimated": bool(fx.get("estimated")),
+        "source": source,
+    }
+    if parallel <= 0:
+        return info
+
+    last = db.query(RateSnapshot).order_by(RateSnapshot.id.desc()).first()
+    day_start = datetime(now.year, now.month, now.day)
+    today_first = (
+        db.query(RateSnapshot)
+        .filter(RateSnapshot.created_at >= day_start)
+        .order_by(RateSnapshot.id.asc())
+        .first()
+    )
+    if today_first and today_first.parallel > 0:
+        diff_today = parallel - today_first.parallel
+        info["change_today"] = round(diff_today, 2)
+        info["change_today_pct"] = round(diff_today / today_first.parallel * 100, 2)
+
+    window_start = now - timedelta(minutes=RATE_ALERT_WINDOW_MINUTES)
+    ref = (
+        db.query(RateSnapshot)
+        .filter(RateSnapshot.created_at <= window_start)
+        .order_by(RateSnapshot.id.desc())
+        .first()
+    )
+
+    alerts: list[Alert] = []
+    if ref and ref.parallel > 0:
+        diff = parallel - ref.parallel
+        pct = diff / ref.parallel * 100
+        info["previous"] = round(ref.parallel, 2)
+        info["change"] = round(diff, 2)
+        info["change_pct"] = round(pct, 2)
+
+        cooldown = now - timedelta(minutes=RATE_ALERT_COOLDOWN_MINUTES)
+        recent = (
+            db.query(Alert)
+            .filter(Alert.kind == "rate", Alert.created_at >= cooldown)
+            .first()
+        )
+        if abs(diff) >= RATE_ALERT_IQD and not recent:
+            rising = diff > 0
+            severity = "high" if abs(diff) >= RATE_ALERT_IQD * 3 else "medium"
+            direction_ar = "صعد" if rising else "نزل"
+            direction_en = "rose" if rising else "fell"
+            title = f"سعر السوق الموازي {direction_ar} {abs(diff):,.0f} د.ع"
+            title_en = f"Parallel dollar rate {direction_en} {abs(diff):,.0f} IQD"
+            gram_note_ar = ""
+            gram_note_en = ""
+            if usd_oz > 0:
+                gram_delta = usd_oz / OUNCE_GRAMS * diff
+                gram_note_ar = (
+                    f" يعني تغيّراً بنحو {abs(gram_delta):,.0f} د.ع في غرام عيار 24."
+                )
+                gram_note_en = (
+                    f" That is about {abs(gram_delta):,.0f} IQD per 24K gram."
+                )
+            body = (
+                f"انتقل سعر الدولار في السوق الموازي من {_fmt(ref.parallel)} إلى "
+                f"{_fmt(parallel)} د.ع، أي {diff:+,.0f} د.ع ({pct:+.2f}%). "
+                f"السعر الرسمي {_fmt(official)} د.ع والفارق {gap:.1f}%."
+                f"{gram_note_ar} راقب الأثر على سعر الذهب قبل الشراء أو البيع."
+            )
+            body_en = (
+                f"The parallel USD/IQD rate moved from {_fmt(ref.parallel)} to "
+                f"{_fmt(parallel)}, a change of {diff:+,.0f} IQD ({pct:+.2f}%). "
+                f"The official rate is {_fmt(official)} with a {gap:.1f}% gap."
+                f"{gram_note_en} Watch the impact on gold before buying or selling."
+            )
+            alerts.append(
+                Alert(
+                    created_at=now,
+                    kind="rate",
+                    severity=severity,
+                    title=title,
+                    title_en=title_en,
+                    body=body,
+                    body_en=body_en,
+                    action="RATE_UP" if rising else "RATE_DOWN",
+                    price=usd_oz,
+                )
+            )
+
+    should_store = last is None or (
+        now - last.created_at >= timedelta(minutes=RATE_SNAPSHOT_MINUTES)
+    )
+    if should_store:
+        db.add(
+            RateSnapshot(
+                created_at=now,
+                parallel=parallel,
+                official=official,
+                gap_pct=gap,
+                source=source,
+            )
+        )
+    if alerts:
+        db.add_all(alerts)
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+    return info
 
 
 def list_alerts(db: Session, limit: int = 60) -> dict:

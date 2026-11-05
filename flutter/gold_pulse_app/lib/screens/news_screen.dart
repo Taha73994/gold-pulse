@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_state.dart';
@@ -41,8 +41,8 @@ class _NewsScreenState extends State<NewsScreen> {
     final items = payload == null
         ? const <NewsItem>[]
         : (_category == 'all'
-            ? payload.items
-            : payload.items.where((i) => i.category == _category).toList());
+              ? payload.items
+              : payload.items.where((i) => i.category == _category).toList());
 
     return Scaffold(
       body: SafeArea(
@@ -114,6 +114,7 @@ class _NewsScreenState extends State<NewsScreen> {
             Expanded(
               child: RefreshIndicator(
                 color: c.gold,
+                notificationPredicate: (_) => false,
                 onRefresh: () => state.loadNews(),
                 child: items.isEmpty
                     ? ListView(
@@ -197,8 +198,8 @@ class _NewsScreenState extends State<NewsScreen> {
                     color: item.positive
                         ? c.green
                         : item.negative
-                            ? c.red
-                            : c.muted,
+                        ? c.red
+                        : c.muted,
                   ),
                 ],
               ),
@@ -251,7 +252,10 @@ class _NewsScreenState extends State<NewsScreen> {
                     final uri = Uri.tryParse(item.link);
                     if (uri == null) return;
                     try {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      await launchUrl(
+                        uri,
+                        mode: LaunchMode.externalApplication,
+                      );
                     } catch (_) {}
                   },
                   icon: const Icon(Icons.open_in_new_rounded, size: 17),
@@ -276,7 +280,11 @@ class _SummaryBar extends StatelessWidget {
     final c = AppColors.of(context);
     final positive = summary.score > 0.05;
     final negative = summary.score < -0.05;
-    final color = positive ? c.green : negative ? c.red : c.amber;
+    final color = positive
+        ? c.green
+        : negative
+        ? c.red
+        : c.amber;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
       decoration: BoxDecoration(
@@ -290,8 +298,8 @@ class _SummaryBar extends StatelessWidget {
             positive
                 ? Icons.trending_up_rounded
                 : negative
-                    ? Icons.trending_down_rounded
-                    : Icons.remove_rounded,
+                ? Icons.trending_down_rounded
+                : Icons.remove_rounded,
             size: 18,
             color: color,
           ),
@@ -354,8 +362,8 @@ class _NewsCard extends StatelessWidget {
     final color = item.positive
         ? c.green
         : item.negative
-            ? c.red
-            : c.amber;
+        ? c.red
+        : c.amber;
     return SurfaceCard(
       padding: const EdgeInsets.all(13),
       onTap: onTap,
@@ -372,8 +380,8 @@ class _NewsCard extends StatelessWidget {
               item.positive
                   ? Icons.trending_up_rounded
                   : item.negative
-                      ? Icons.trending_down_rounded
-                      : Icons.remove_rounded,
+                  ? Icons.trending_down_rounded
+                  : Icons.remove_rounded,
               size: 15,
               color: color,
             ),

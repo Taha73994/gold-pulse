@@ -57,15 +57,20 @@ class GoldHeader extends StatelessWidget {
         final logoSize = narrow ? 36.0 : 42.0;
         final buttonSize = narrow ? 34.0 : 38.0;
         return Padding(
-          padding: EdgeInsets.fromLTRB(narrow ? 12 : 16, 8, narrow ? 12 : 16, 4),
+          padding: EdgeInsets.fromLTRB(
+            narrow ? 12 : 16,
+            8,
+            narrow ? 12 : 16,
+            4,
+          ),
           child: Row(
             children: [
               if (leading != null) ...[leading!, const SizedBox(width: 8)],
               // ضغط مطوّل على الشعار = دخول المالك (مخفي عن المستخدم العادي).
               GestureDetector(
-                onLongPress: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AdminScreen()),
-                ),
+                onLongPress: () => Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const AdminScreen())),
                 child: GoldLogo(size: logoSize),
               ),
               const SizedBox(width: 8),
@@ -120,12 +125,9 @@ class GoldHeader extends StatelessWidget {
               ),
               const SizedBox(width: 5),
               _RoundButton(
-                icon: dark
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
-                onTap: () => state.setThemeMode(
-                  dark ? ThemeMode.light : ThemeMode.dark,
-                ),
+                icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                onTap: () =>
+                    state.setThemeMode(dark ? ThemeMode.light : ThemeMode.dark),
                 tooltip: l.theme,
                 size: buttonSize,
               ),
@@ -206,9 +208,8 @@ class _NotificationButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AlertsScreen()),
-          ),
+          onTap: () => Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const AlertsScreen())),
           child: Container(
             width: size,
             height: size,
@@ -226,7 +227,10 @@ class _NotificationButton extends StatelessWidget {
                     top: 4,
                     right: 3,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 1,
+                      ),
                       constraints: const BoxConstraints(minWidth: 14),
                       decoration: BoxDecoration(
                         color: c.red,

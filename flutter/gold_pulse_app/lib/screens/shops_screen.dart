@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_state.dart';
@@ -121,8 +121,12 @@ class _ShopsScreenState extends State<ShopsScreen> {
             Expanded(
               child: RefreshIndicator(
                 color: c.gold,
+                notificationPredicate: (_) => false,
                 onRefresh: () async {
-                  await Future.wait([state.loadShops(), state.loadShopCities()]);
+                  await Future.wait([
+                    state.loadShops(),
+                    state.loadShopCities(),
+                  ]);
                 },
                 child: shops.isEmpty
                     ? ListView(
@@ -164,9 +168,8 @@ class _ShopsScreenState extends State<ShopsScreen> {
   }
 
   void _openShop(BuildContext context, Shop shop) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ShopDetailScreen(shop: shop)),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => ShopDetailScreen(shop: shop)));
   }
 }
 
@@ -371,10 +374,8 @@ class _ShopCard extends StatelessWidget {
                           icon: Icons.chat_rounded,
                           label: l.whatsapp,
                           color: c.green,
-                          onTap: () => launchUri(
-                            whatsappUrl(shop.whatsapp),
-                            web: true,
-                          ),
+                          onTap: () =>
+                              launchUri(whatsappUrl(shop.whatsapp), web: true),
                         ),
                       ),
                     const SizedBox(width: 7),
@@ -581,9 +582,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                           onTap: shop.whatsapp.isEmpty
                               ? null
                               : () => launchUri(
-                                    whatsappUrl(shop.whatsapp),
-                                    web: true,
-                                  ),
+                                  whatsappUrl(shop.whatsapp),
+                                  web: true,
+                                ),
                         ),
                         _InfoRow(
                           icon: Icons.place_outlined,
@@ -594,7 +595,9 @@ class _ShopDetailScreenState extends State<ShopDetailScreen> {
                         _InfoRow(
                           icon: Icons.schedule_outlined,
                           label: l.workingHours,
-                          value: shop.workingHours.isEmpty ? '—' : shop.workingHours,
+                          value: shop.workingHours.isEmpty
+                              ? '—'
+                              : shop.workingHours,
                         ),
                       ],
                     ),

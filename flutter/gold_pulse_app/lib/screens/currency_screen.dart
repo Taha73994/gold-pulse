@@ -61,7 +61,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
               subtitle: l.currencySubtitle,
               actions: [
                 IconButton(
-                  onPressed: state.loadingCurrencies ? null : state.loadCurrencies,
+                  onPressed: state.loadingCurrencies
+                      ? null
+                      : state.loadCurrencies,
                   icon: state.loadingCurrencies
                       ? SizedBox(
                           width: 16,
@@ -103,7 +105,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
-                        ),
+                          ),
                         ),
                         const SizedBox(height: 13),
                         Row(
@@ -118,7 +120,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                              ),
                               child: IconButton(
                                 onPressed: () => setState(() {
                                   final tmp = _from;
@@ -127,7 +131,9 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                 }),
                                 icon: const Icon(Icons.swap_horiz_rounded),
                                 style: IconButton.styleFrom(
-                                  backgroundColor: c.gold.withValues(alpha: 0.12),
+                                  backgroundColor: c.gold.withValues(
+                                    alpha: 0.12,
+                                  ),
                                   foregroundColor: c.gold,
                                 ),
                                 tooltip: l.swap,
@@ -256,7 +262,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                 ),
                               ),
                               Text(
-                                l.number(to?.perUsd ?? 0, digits: to?.decimals ?? 2),
+                                l.number(
+                                  to?.perUsd ?? 0,
+                                  digits: to?.decimals ?? 2,
+                                ),
                                 style: TextStyle(
                                   fontFamily: 'Cairo',
                                   fontSize: 12,
@@ -330,7 +339,10 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                     ),
                                   ),
                                   Text(
-                                    l.number(item.perUsd, digits: item.decimals),
+                                    l.number(
+                                      item.perUsd,
+                                      digits: item.decimals,
+                                    ),
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
                                       fontSize: 12,

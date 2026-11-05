@@ -11,9 +11,14 @@ from threading import Lock
 from .config import (
     DEFAULT_USD_IQD,
     FX_CACHE_SECONDS,
+    FX_MARKET_CACHE_SECONDS,
     HTTP_TIMEOUT,
+    LOCAL_BUY_MARGIN_PCT,
+    LOCAL_SELL_MARGIN_PCT,
     MARKET_CACHE_SECONDS,
     OUNCE_GRAMS,
+    PARALLEL_FX_FALLBACK_PREMIUM_PCT,
+    PARALLEL_FX_URL,
     USER_AGENT,
 )
 
@@ -124,6 +129,75 @@ def usd_iqd() -> dict:
         }
 
 
+def _parallel_fx_loader() -> dict:
+    """سعر الدولار في السوق الموازي (سوق الكفاح/بغداد) والسعر الرسمي.
+
+    المصدر المجاني: IQWealth — https://iraqsm.com/data/fx.json
+    """
+    data = _http_json(PARALLEL_FX_URL)
+    parallel = data.get("parallel") or {}
+    official = data.get("official") or {}
+    shops = data.get("shops") or {}
+
+    buy = float(parallel.get("buy") or 0)
+    sell = float(parallel.get("sell") or 0)
+    if buy <= 0 and sell <= 0:
+        raise RuntimeError("لا يوجد سعر موازٍ في المصدر")
+    if sell <= 0:
+        sell = buy
+    if buy <= 0:
+        buy = sell
+
+    cbi = float(official.get("cbi") or 0) or float(usd_iqd()["usd_iqd"])
+    mid = (buy + sell) / 2
+    gap = float(data.get("gapPct") or 0)
+    if not gap and cbi:
+        gap = (mid - cbi) / cbi * 100
+
+    return {
+        "parallel_buy": round(buy, 2),
+        "parallel_sell": round(sell, 2),
+        "parallel_mid": round(mid, 2),
+        "official": round(cbi, 2),
+        "gap_pct": round(gap, 2),
+        "shop_buy": round(float(shops.get("buy") or 0), 2),
+        "shop_sell": round(float(shops.get("sell") or 0), 2),
+        "available": True,
+        "estimated": False,
+        "stale": bool(parallel.get("stale")),
+        "published_at": parallel.get("publishedAt") or "",
+        "as_of": data.get("asOf") or "",
+        "source": "IQWealth (iraqsm.com)",
+        "source_url": "https://iraqsm.com/fx",
+    }
+
+
+def market_fx() -> dict:
+    """سعر السوق الموازي مع بديل تقديري عند تعذر المصدر."""
+    try:
+        return _cached("fx_market", FX_MARKET_CACHE_SECONDS, _parallel_fx_loader)
+    except Exception:
+        official = usd_iqd()
+        base = float(official.get("usd_iqd") or DEFAULT_USD_IQD)
+        est = base * (1 + PARALLEL_FX_FALLBACK_PREMIUM_PCT / 100)
+        return {
+            "parallel_buy": round(est - 1, 2),
+            "parallel_sell": round(est + 1, 2),
+            "parallel_mid": round(est, 2),
+            "official": round(base, 2),
+            "gap_pct": round(PARALLEL_FX_FALLBACK_PREMIUM_PCT, 2),
+            "shop_buy": 0,
+            "shop_sell": 0,
+            "available": False,
+            "estimated": True,
+            "stale": True,
+            "published_at": official.get("updated") or "",
+            "as_of": "",
+            "source": "تقدير من السعر الرسمي",
+            "source_url": "https://iraqsm.com/fx",
+        }
+
+
 def _pct_change(values: list[float], days: int) -> float:
     if len(values) <= days:
         return 0.0
@@ -172,6 +246,42 @@ def price_per_gram(usd_oz: float, iqd_rate: float, karat: int = 24) -> float:
     return usd_oz / OUNCE_GRAMS * iqd_rate * (karat / 24)
 
 
+def local_quotes(grams: dict[str, float], parallel_rate: float) -> dict:
+    """سعر الشاشة + هامش السوق = سعر البيع والشراء التقريبي في العراق.
+
+    ask = سعر البيع للزبون (يشتري الذهب)، bid = سعر الشراء من الزبون (يبيع الذهب).
+    سعر الشاشة نفسه محسوب بسعر صرف السوق الموازي.
+    """
+    buy = max(0.0, LOCAL_BUY_MARGIN_PCT)
+    sell = max(0.0, LOCAL_SELL_MARGIN_PCT)
+    by_karat = {}
+    for karat, screen in grams.items():
+        bid = screen * (1 - buy / 100)
+        ask = screen * (1 + sell / 100)
+        by_karat[karat] = {
+            "screen": round(screen),
+            "bid": round(bid),
+            "ask": round(ask),
+            "spread": round(ask - bid),
+            "spread_pct": round((ask - bid) / screen * 100, 2) if screen else 0,
+        }
+    return {
+        "buy_margin_pct": buy,
+        "sell_margin_pct": sell,
+        "parallel_rate": round(parallel_rate, 2),
+        "rate_kind": "parallel",
+        "by_karat": by_karat,
+        "note_ar": (
+            "محسوب بسعر صرف السوق الموازي (الكفاح) مع هامش السوق القابل للضبط؛ "
+            "قد يختلف من محل لآخر."
+        ),
+        "note_en": (
+            "Priced at the parallel (Kifah) exchange rate plus a configurable "
+            "market margin; varies by dealer."
+        ),
+    }
+
+
 def market_snapshot(lang: str = "ar") -> dict:
     gold = gold_history("1y")
     candles = gold["candles"]
@@ -181,8 +291,22 @@ def market_snapshot(lang: str = "ar") -> dict:
     change = last["close"] - prev["close"]
     change_pct = (change / prev["close"] * 100) if prev["close"] else 0
     fx = usd_iqd()
-    rate = fx["usd_iqd"]
+    mfx = market_fx()
+    rate = float(mfx["parallel_sell"])
+    official_rate = float(mfx["official"])
     macro = macro_snapshot()
+    grams = {
+        "24": round(price_per_gram(last["close"], rate, 24)),
+        "22": round(price_per_gram(last["close"], rate, 22)),
+        "21": round(price_per_gram(last["close"], rate, 21)),
+        "18": round(price_per_gram(last["close"], rate, 18)),
+    }
+    grams_official = {
+        "24": round(price_per_gram(last["close"], official_rate, 24)),
+        "22": round(price_per_gram(last["close"], official_rate, 22)),
+        "21": round(price_per_gram(last["close"], official_rate, 21)),
+        "18": round(price_per_gram(last["close"], official_rate, 18)),
+    }
 
     return {
         "ok": True,
@@ -197,24 +321,28 @@ def market_snapshot(lang: str = "ar") -> dict:
         "low": round(last["low"], 2),
         "prev_close": round(prev["close"], 2),
         "usd_iqd": rate,
-        "fx_source": fx["source"],
-        "fx_updated": fx["updated"],
-        "iqd_gram": {
-            "24": round(price_per_gram(last["close"], rate, 24)),
-            "22": round(price_per_gram(last["close"], rate, 22)),
-            "21": round(price_per_gram(last["close"], rate, 21)),
-            "18": round(price_per_gram(last["close"], rate, 18)),
-        },
+        "usd_iqd_official": official_rate,
+        "fx": mfx,
+        "fx_source": mfx["source"],
+        "fx_updated": mfx["published_at"] or fx["updated"],
+        "iqd_gram": grams,
+        "iqd_gram_official": grams_official,
+        "local": local_quotes(grams, rate),
         "spark": [round(c["close"], 2) for c in candles[-40:]],
         "volatility_20d": round(pstdev([c["close"] for c in candles[-20:]]) / last["close"] * 100, 2)
         if len(candles) >= 20
         else 0,
         "macro": macro,
         "disclaimer": (
-            "Gold is quoted in USD per troy ounce. The dinar price is an estimate "
-            "based on the published FX rate and differs from local market prices."
+            "Gold is quoted in USD per troy ounce. The dinar price here uses the "
+            "parallel (black-market) USD/IQD rate, which is how gold is priced in Iraq; "
+            "the official rate is shown for reference only."
             if lang == "en"
-            else "السعر العالمي بالدولار للأونصة. سعر الدينار تقديري حسب سعر الصرف المعلن، ويختلف عن سعر السوق المحلي."
+            else (
+                "السعر العالمي بالدولار للأونصة. سعر الدينار هنا محسوب بسعر صرف "
+                "السوق الموازي (السوق السوداء) لأن الذهب في العراق يُسعَّر به، "
+                "والسعر الرسمي معروض للمقارنة فقط."
+            )
         ),
     }
 

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
 import '../core/models.dart';
@@ -7,6 +7,8 @@ import '../widgets/app_header.dart';
 import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/forecast_card.dart';
+import '../widgets/local_quote_card.dart';
+import '../widgets/parallel_rate_card.dart';
 import '../widgets/plan_sheet.dart';
 import 'alerts_screen.dart';
 import 'ads_screen.dart';
@@ -30,6 +32,8 @@ class HomeScreen extends StatelessWidget {
       bottom: false,
       child: RefreshIndicator(
         color: c.gold,
+        // لا سحب للتحديث: التحديث يتم تلقائياً في الخلفية.
+        notificationPredicate: (_) => false,
         onRefresh: state.refreshAll,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -53,6 +57,18 @@ class HomeScreen extends StatelessWidget {
                     loading: state.loadingMarket,
                     onTap: () => onNavigate(1),
                   ),
+                  if (market?.fx != null) ...[
+                    const SizedBox(height: 12),
+                    ParallelRateCard(
+                      fx: market!.fx!,
+                      compact: true,
+                      officialGram24: market.iqdGramOfficial[24] ?? 0,
+                    ),
+                  ],
+                  if (market?.local != null && !market!.local!.isEmpty) ...[
+                    const SizedBox(height: 12),
+                    LocalQuoteCard(quote: market.local!),
+                  ],
                   const SizedBox(height: 14),
                   _QuickActions(l: l),
                   const SizedBox(height: 18),
@@ -71,10 +87,7 @@ class HomeScreen extends StatelessWidget {
                           ),
                   ),
                   if (analysis != null)
-                    _SignalCard(
-                      state: state,
-                      onOpenMentor: () => onNavigate(2),
-                    )
+                    _SignalCard(state: state, onOpenMentor: () => onNavigate(2))
                   else
                     const _LoadingCard(height: 190),
                   if (analysis != null && analysis.forecast.ok) ...[
@@ -111,14 +124,14 @@ class HomeScreen extends StatelessWidget {
                       icon: Icons.newspaper_rounded,
                       trailing: TextButton(
                         onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const NewsScreen(),
-                          ),
+                          MaterialPageRoute(builder: (_) => const NewsScreen()),
                         ),
                         child: Text(l.viewAll),
                       ),
                     ),
-                    ...state.newsData!.catalysts.take(3).map(
+                    ...state.newsData!.catalysts
+                        .take(3)
+                        .map(
                           (item) => _MiniNews(
                             item: item,
                             l: l,
@@ -179,7 +192,9 @@ class HomeScreen extends StatelessWidget {
                         child: Text(l.viewAll),
                       ),
                     ),
-                    ...state.shops.take(2).map(
+                    ...state.shops
+                        .take(2)
+                        .map(
                           (shop) => _ShopMini(
                             shop: shop,
                             en: state.en,
@@ -433,7 +448,7 @@ class _PriceHero extends StatelessWidget {
                 Icon(Icons.currency_exchange_rounded, size: 12, color: c.muted),
                 const SizedBox(width: 4),
                 Text(
-                  '${l.usdIqdLabel} ${l.number(m.usdIqd, digits: 2)}',
+                  '${l.parallelDollarShort} ${l.number(m.usdIqd, digits: 1)}',
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 9.5,
@@ -478,9 +493,9 @@ class _QuickActions extends StatelessWidget {
             child: _QuickAction(
               icon: item.$1,
               label: item.$2,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => item.$3),
-              ),
+              onTap: () =>
+                  Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => item.$3)),
             ),
           ),
         );
@@ -573,7 +588,10 @@ class _SignalCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(9),
@@ -750,46 +768,46 @@ class _AdviceBlock extends StatelessWidget {
           ),
           if (steps.isNotEmpty) const SizedBox(height: 8),
           ...steps.asMap().entries.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 17,
-                        height: 17,
-                        margin: const EdgeInsets.only(top: 1),
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: c.gold.withValues(alpha: 0.16),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '${entry.key + 1}',
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 8.5,
-                            fontWeight: FontWeight.w800,
-                            color: c.gold,
-                          ),
-                        ),
+            (entry) => Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 17,
+                    height: 17,
+                    margin: const EdgeInsets.only(top: 1),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: c.gold.withValues(alpha: 0.16),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${entry.key + 1}',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w800,
+                        color: c.gold,
                       ),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Text(
-                          entry.value,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: 11,
-                            height: 1.55,
-                            color: c.ink,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      entry.value,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 11,
+                        height: 1.55,
+                        color: c.ink,
+                      ),
+                    ),
+                  ),
+                ],
               ),
+            ),
+          ),
           if (plan.riskNote.isNotEmpty) ...[
             Divider(color: c.border, height: 12),
             Row(
@@ -971,8 +989,7 @@ class _PlanPreview extends StatelessWidget {
               Expanded(
                 child: _MiniLevel(
                   label: l.entryZone,
-                  value:
-                      l.usdRange(plan.entryLow, plan.entryHigh),
+                  value: l.usdRange(plan.entryLow, plan.entryHigh),
                 ),
               ),
               const SizedBox(width: 7),
@@ -1018,11 +1035,7 @@ class _MiniLevel extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: 9,
-              color: c.muted,
-            ),
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: c.muted),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -1061,7 +1074,11 @@ class _ReasonsList extends StatelessWidget {
         children: reasons.map((r) {
           final positive = r.impact == 'positive';
           final negative = r.impact == 'negative';
-          final color = positive ? c.green : negative ? c.red : c.amber;
+          final color = positive
+              ? c.green
+              : negative
+              ? c.red
+              : c.amber;
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
@@ -1071,8 +1088,8 @@ class _ReasonsList extends StatelessWidget {
                   positive
                       ? Icons.trending_up_rounded
                       : negative
-                          ? Icons.trending_down_rounded
-                          : Icons.remove_rounded,
+                      ? Icons.trending_down_rounded
+                      : Icons.remove_rounded,
                   size: 16,
                   color: color,
                 ),
@@ -1116,18 +1133,18 @@ class _MiniNews extends StatelessWidget {
   final dynamic l;
   final VoidCallback onTap;
 
-  const _MiniNews({
-    required this.item,
-    required this.l,
-    required this.onTap,
-  });
+  const _MiniNews({required this.item, required this.l, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final positive = item.positive;
     final negative = item.negative;
-    final color = positive ? c.green : negative ? c.red : c.amber;
+    final color = positive
+        ? c.green
+        : negative
+        ? c.red
+        : c.amber;
     return SurfaceCard(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(13),
@@ -1145,8 +1162,8 @@ class _MiniNews extends StatelessWidget {
               positive
                   ? Icons.trending_up_rounded
                   : negative
-                      ? Icons.trending_down_rounded
-                      : Icons.remove_rounded,
+                  ? Icons.trending_down_rounded
+                  : Icons.remove_rounded,
               size: 15,
               color: color,
             ),
@@ -1292,11 +1309,7 @@ class _ShopMini extends StatelessWidget {
   final bool en;
   final VoidCallback onTap;
 
-  const _ShopMini({
-    required this.shop,
-    required this.en,
-    required this.onTap,
-  });
+  const _ShopMini({required this.shop, required this.en, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1350,11 +1363,7 @@ class _ShopMini extends StatelessWidget {
             ),
           ),
           if (shop.isVerified)
-            const Pill(
-              text: '✓',
-              color: Color(0xFF2DD4BF),
-              fontSize: 10,
-            ),
+            const Pill(text: '✓', color: Color(0xFF2DD4BF), fontSize: 10),
           const SizedBox(width: 6),
           Icon(Icons.chevron_left_rounded, size: 18, color: c.muted),
         ],
@@ -1417,9 +1426,7 @@ class _LoadingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: c.border),
       ),
-      child: Center(
-        child: CircularProgressIndicator(color: c.gold),
-      ),
+      child: Center(child: CircularProgressIndicator(color: c.gold)),
     );
   }
 }

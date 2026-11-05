@@ -21,8 +21,7 @@ class ContactLinks {
 
   static String email(String value) => 'mailto:${value.trim()}';
 
-  static String _clean(String value) =>
-      value.replaceAll(RegExp(r'[^\d+]'), '');
+  static String _clean(String value) => value.replaceAll(RegExp(r'[^\d+]'), '');
 }
 
 Future<void> openExternal(String url) async {

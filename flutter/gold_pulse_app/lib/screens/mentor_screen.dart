@@ -50,6 +50,7 @@ class MentorScreen extends StatelessWidget {
                   ? _MentorLoading(l: l, loading: state.loadingAnalysis)
                   : RefreshIndicator(
                       color: c.gold,
+                      notificationPredicate: (_) => false,
                       onRefresh: () async {
                         await Future.wait([
                           state.loadAnalysis(),
@@ -79,7 +80,10 @@ class MentorScreen extends StatelessWidget {
                               title: l.keyLevels,
                               icon: Icons.straighten_rounded,
                             ),
-                            _LevelsList(levels: analysis.mentor.keyLevels, l: l),
+                            _LevelsList(
+                              levels: analysis.mentor.keyLevels,
+                              l: l,
+                            ),
                           ],
                           if (analysis.mentor.scenarios.isNotEmpty) ...[
                             const SizedBox(height: 18),
@@ -91,8 +95,9 @@ class MentorScreen extends StatelessWidget {
                               ),
                               icon: Icons.alt_route_rounded,
                             ),
-                            ...analysis.mentor.scenarios
-                                .map((s) => _ScenarioCard(scenario: s, l: l)),
+                            ...analysis.mentor.scenarios.map(
+                              (s) => _ScenarioCard(scenario: s, l: l),
+                            ),
                           ],
                           if (analysis.mentor.weekly.isNotEmpty) ...[
                             const SizedBox(height: 18),
@@ -149,8 +154,16 @@ class MentorScreen extends StatelessWidget {
                           const SizedBox(height: 16),
                           OutlinedButton.icon(
                             onPressed: () => showPlanSheet(context, state),
-                            icon: const Icon(Icons.description_outlined, size: 17),
-                            label: Text(l.pick('افتح خطة الأسبوع الكاملة', 'Open the full weekly plan')),
+                            icon: const Icon(
+                              Icons.description_outlined,
+                              size: 17,
+                            ),
+                            label: Text(
+                              l.pick(
+                                'افتح خطة الأسبوع الكاملة',
+                                'Open the full weekly plan',
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 14),
                           DisclaimerBox(
@@ -287,7 +300,9 @@ class _StanceCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            mentor.headline.isNotEmpty ? mentor.headline : analysis.plan.verdict,
+            mentor.headline.isNotEmpty
+                ? mentor.headline
+                : analysis.plan.verdict,
             style: TextStyle(
               fontFamily: 'Cairo',
               fontSize: 16,
@@ -313,8 +328,14 @@ class _StanceCard extends StatelessWidget {
             spacing: 7,
             runSpacing: 7,
             children: [
-              Pill(text: '${l.score} ${l.number(analysis.score, digits: 0)}', color: color),
-              Pill(text: '${l.confidence} ${analysis.confidence}%', color: c.blue),
+              Pill(
+                text: '${l.score} ${l.number(analysis.score, digits: 0)}',
+                color: color,
+              ),
+              Pill(
+                text: '${l.confidence} ${analysis.confidence}%',
+                color: c.blue,
+              ),
               Pill(text: analysis.regime, color: c.gold),
             ],
           ),
@@ -503,9 +524,21 @@ class _ScenarioCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 9),
-          _ScenarioRow(label: l.trigger, value: scenario.trigger, color: c.blue),
-          _ScenarioRow(label: l.actionLabel, value: scenario.action, color: c.gold),
-          _ScenarioRow(label: l.targetLabel, value: scenario.target, color: c.green),
+          _ScenarioRow(
+            label: l.trigger,
+            value: scenario.trigger,
+            color: c.blue,
+          ),
+          _ScenarioRow(
+            label: l.actionLabel,
+            value: scenario.action,
+            color: c.gold,
+          ),
+          _ScenarioRow(
+            label: l.targetLabel,
+            value: scenario.target,
+            color: c.green,
+          ),
           _ScenarioRow(label: l.riskLabel, value: scenario.risk, color: c.red),
         ],
       ),

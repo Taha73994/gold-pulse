@@ -65,8 +65,9 @@ class _PriceChartState extends State<PriceChart> {
         ? null
         : list[_selected!.clamp(0, list.length - 1)];
     final reference = selected ?? list.last;
-    final referenceIndex =
-        selected == null ? list.length - 1 : _selected!.clamp(0, list.length - 1);
+    final referenceIndex = selected == null
+        ? list.length - 1
+        : _selected!.clamp(0, list.length - 1);
     final previous = referenceIndex > 0 ? list[referenceIndex - 1] : null;
     final change = previous == null || previous.close == 0
         ? 0.0
@@ -130,8 +131,7 @@ class _PriceChartState extends State<PriceChart> {
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onTapDown: (d) => _pick(d.localPosition.dx, width),
-              onHorizontalDragUpdate: (d) =>
-                  _pick(d.localPosition.dx, width),
+              onHorizontalDragUpdate: (d) => _pick(d.localPosition.dx, width),
               onHorizontalDragEnd: (_) {
                 Future.delayed(const Duration(seconds: 2), () {
                   if (mounted) setState(() => _selected = null);
@@ -240,22 +240,25 @@ class _ChartPainter extends CustomPainter {
     for (var i = 0; i < 4; i++) {
       final value = minValue + range * (i / 3);
       final yy = y(value);
-      canvas.drawLine(Offset(left, yy), Offset(size.width - right, yy), gridPaint);
+      canvas.drawLine(
+        Offset(left, yy),
+        Offset(size.width - right, yy),
+        gridPaint,
+      );
       final tp = TextPainter(
         text: TextSpan(
           text: formatPrice(value),
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 9.5,
-            color: muted,
-          ),
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 9.5, color: muted),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       tp.paint(canvas, Offset(4, yy - tp.height / 2));
     }
 
-    final count = ((candles.length - 1) * progress).floor().clamp(0, candles.length - 1);
+    final count = ((candles.length - 1) * progress).floor().clamp(
+      0,
+      candles.length - 1,
+    );
     if (count < 1) return;
 
     // منطقة التعبئة
@@ -270,10 +273,7 @@ class _ChartPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          line.withValues(alpha: 0.28),
-          line.withValues(alpha: 0.02),
-        ],
+        colors: [line.withValues(alpha: 0.28), line.withValues(alpha: 0.02)],
       ).createShader(Rect.fromLTWH(left, top, chartWidth, chartHeight));
     canvas.drawPath(fillPath, fillPaint);
 
@@ -309,11 +309,7 @@ class _ChartPainter extends CustomPainter {
       final tp = TextPainter(
         text: TextSpan(
           text: label,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: 9,
-            color: muted,
-          ),
+          style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: muted),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
@@ -387,7 +383,8 @@ class _SparkPainter extends CustomPainter {
     final maxV = values.reduce(math.max);
     final range = math.max(0.001, maxV - minV);
     double x(int i) => i / (values.length - 1) * size.width;
-    double y(double v) => size.height - 3 - (v - minV) / range * (size.height - 6);
+    double y(double v) =>
+        size.height - 3 - (v - minV) / range * (size.height - 6);
 
     final path = Path()..moveTo(x(0), y(values[0]));
     for (var i = 1; i < values.length; i++) {
@@ -482,9 +479,30 @@ class ScoreBar extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('-100', style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: c.muted)),
-            Text('0', style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: c.muted)),
-            Text('+100', style: TextStyle(fontFamily: 'Cairo', fontSize: 9, color: c.muted)),
+            Text(
+              '-100',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 9,
+                color: c.muted,
+              ),
+            ),
+            Text(
+              '0',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 9,
+                color: c.muted,
+              ),
+            ),
+            Text(
+              '+100',
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 9,
+                color: c.muted,
+              ),
+            ),
           ],
         ),
       ],

@@ -63,7 +63,11 @@ class OwnerContactCard extends StatelessWidget {
                   color: c.gold.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.support_agent_rounded, size: 17, color: c.gold),
+                child: Icon(
+                  Icons.support_agent_rounded,
+                  size: 17,
+                  color: c.gold,
+                ),
               ),
               const SizedBox(width: 9),
               Expanded(
@@ -71,7 +75,9 @@ class OwnerContactCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      name.isEmpty ? l.contactOwner : '${l.contactOwner} · $name',
+                      name.isEmpty
+                          ? l.contactOwner
+                          : '${l.contactOwner} · $name',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(

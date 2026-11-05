@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -8,7 +8,7 @@ import '../core/theme.dart';
 
 class AppScope extends InheritedNotifier<AppState> {
   const AppScope({super.key, required AppState state, required super.child})
-      : super(notifier: state);
+    : super(notifier: state);
 
   static AppState of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<AppScope>();
@@ -115,10 +115,7 @@ class SectionHeader extends StatelessWidget {
                 Text(title, style: Theme.of(context).textTheme.titleLarge),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                  Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
                 ],
               ],
             ),
@@ -159,7 +156,11 @@ class Pill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, size: fontSize + 2, color: filled ? Colors.white : color),
+            Icon(
+              icon,
+              size: fontSize + 2,
+              color: filled ? Colors.white : color,
+            ),
             const SizedBox(width: 4),
           ],
           Text(
@@ -357,10 +358,7 @@ class EmptyState extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
-          if (action != null) ...[
-            const SizedBox(height: 16),
-            action!,
-          ],
+          if (action != null) ...[const SizedBox(height: 16), action!],
         ],
       ),
     );
@@ -425,12 +423,14 @@ class ErrorBanner extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
   final L10n l;
+  final String? detail;
 
   const ErrorBanner({
     super.key,
     required this.message,
     required this.onRetry,
     required this.l,
+    this.detail,
   });
 
   @override
@@ -449,11 +449,33 @@ class ErrorBanner extends StatelessWidget {
           Icon(Icons.wifi_off_rounded, size: 17, color: c.red),
           const SizedBox(width: 9),
           Expanded(
-            child: Text(
-              '${l.connectionError} · $message',
-              style: TextStyle(fontFamily: 'Cairo', fontSize: 11.5, color: c.red),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${l.connectionError} · $message',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 11.5,
+                    color: c.red,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (detail != null && detail!.isNotEmpty)
+                  Text(
+                    detail!,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 9.5,
+                      color: c.red.withValues(alpha: 0.75),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.ltr,
+                  ),
+              ],
             ),
           ),
           TextButton(
@@ -584,10 +606,7 @@ class ImageBox extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            c.gold.withValues(alpha: 0.22),
-            c.surfaceAlt,
-          ],
+          colors: [c.gold.withValues(alpha: 0.22), c.surfaceAlt],
         ),
         borderRadius: BorderRadius.circular(radius),
       ),
@@ -615,10 +634,7 @@ class ImageBox extends StatelessWidget {
               child: SizedBox(
                 width: 22,
                 height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: c.gold,
-                ),
+                child: CircularProgressIndicator(strokeWidth: 2, color: c.gold),
               ),
             ),
           );
@@ -674,10 +690,7 @@ class GoldGlow extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            c.surface,
-            c.gold.withValues(alpha: 0.08),
-          ],
+          colors: [c.surface, c.gold.withValues(alpha: 0.08)],
         ),
         boxShadow: [
           BoxShadow(
