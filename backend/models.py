@@ -1,7 +1,7 @@
 """جداول الإشارات والتنبيهات، المحلات، الإعلانات، ونشاط المستخدمين."""
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .database import Base
@@ -118,3 +118,15 @@ class DeviceActivity(Base):
     locale: Mapped[str] = mapped_column(String(10), default="ar")
     app_version: Mapped[str] = mapped_column(String(30), default="")
     launches: Mapped[int] = mapped_column(Integer, default=1)
+
+
+class MediaFile(Base):
+    """Uploaded images stored in DB so they survive redeploys."""
+
+    __tablename__ = "media_files"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    content_type: Mapped[str] = mapped_column(String(80), default="image/png")
+    data: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

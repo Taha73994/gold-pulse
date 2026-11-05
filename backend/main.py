@@ -6,9 +6,9 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
@@ -30,7 +30,7 @@ from .contact import router as contact_router
 from .currency import convert, currency_payload
 from .database import Base, SessionLocal, engine, get_db
 from .market import history_payload, market_snapshot
-from .models import Alert, OwnerContact  # noqa: F401 — لإنشاء الجدول
+from .models import Alert, MediaFile, OwnerContact  # noqa: F401 — لإنشاء الجدول
 from .news import get_news
 from .presence import router as presence_router
 
@@ -264,6 +264,25 @@ def currency_convert(
         return convert(amount, source, target)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.get("/api/media/{name}", include_in_schema=False)
+def media_file(name: str, db: Session = Depends(get_db)):
+    """تقديم الصور من قاعدة البيانات (تبقى بعد إعادة النشر) أو من القرص محلياً."""
+    safe = Path(name).name
+    if safe != name:
+        raise HTTPException(status_code=404, detail="الصورة غير موجودة")
+    row = db.query(MediaFile).filter(MediaFile.name == safe).first()
+    if row:
+        return Response(
+            content=row.data,
+            media_type=row.content_type,
+            headers={"Cache-Control": "public, max-age=31536000, immutable"},
+        )
+    path = UPLOAD_DIR / safe
+    if path.is_file():
+        return FileResponse(path)
+    raise HTTPException(status_code=404, detail="الصورة غير موجودة")
 
 
 # يجب أن يبقى آخر شيء: يقدّم تطبيق الويب/PWA من نفس الخادم.

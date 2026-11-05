@@ -13,7 +13,7 @@ from .ads import PACKAGES
 from .config import ALLOWED_IMAGE_EXT, MAX_UPLOAD_BYTES, UPLOAD_DIR
 from .database import get_db
 from .market import market_snapshot
-from .models import Ad, Alert, DeviceActivity, OwnerContact, Shop, SignalSnapshot
+from .models import Ad, Alert, DeviceActivity, MediaFile, OwnerContact, Shop, SignalSnapshot
 from .security import require_admin
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -43,7 +43,7 @@ def ping():
 
 
 @router.post("/upload", dependencies=[Depends(require_admin)])
-def upload_image(data: UploadIn):
+def upload_image(data: UploadIn, db: Session = Depends(get_db)):
     raw = data.data.strip()
     if "," in raw and raw.lower().startswith("data:"):
         raw = raw.split(",", 1)[1]
@@ -61,8 +61,23 @@ def upload_image(data: UploadIn):
         raise HTTPException(status_code=413, detail="حجم الصورة أكبر من 3 ميغابايت")
     name = f"{uuid.uuid4().hex}.{ext}"
     path = UPLOAD_DIR / name
-    path.write_bytes(blob)
-    return {"ok": True, "url": f"/media/{name}", "size": len(blob)}
+    try:
+        path.write_bytes(blob)
+    except OSError:
+        pass
+    mime = {
+        "jpg": "image/jpeg",
+        "jpeg": "image/jpeg",
+        "png": "image/png",
+        "webp": "image/webp",
+        "gif": "image/gif",
+    }.get(ext, "application/octet-stream")
+    try:
+        db.add(MediaFile(name=name, content_type=mime, data=blob))
+        db.commit()
+    except Exception:
+        db.rollback()
+    return {"ok": True, "url": f"/api/media/{name}", "size": len(blob)}
 
 
 @router.get("/presence", dependencies=[Depends(require_admin)])
