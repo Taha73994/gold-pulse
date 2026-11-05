@@ -2,10 +2,11 @@
 # مخرجات واحدة فقط: C:\Users\tahali\Pictures\APK
 #
 # مثال:
-#   powershell -ExecutionPolicy Bypass -File tools\build_release.ps1 -Server https://gold-pulse-api.onrender.com
+#   powershell -ExecutionPolicy Bypass -File tools\build_release.ps1
+#   powershell -ExecutionPolicy Bypass -File tools\build_release.ps1 -Server https://gold-pulse-iota.vercel.app
 
 param(
-  [Parameter(Mandatory = $true)][string]$Server,
+  [string]$Server = "https://gold-pulse-iota.vercel.app",
   [switch]$SkipApk,
   [switch]$SkipWeb
 )

@@ -1,134 +1,162 @@
 # النشر على الإنترنت — نبض الذهب / Gold Pulse
 
-الهدف: خادم يعمل **24 ساعة** على الإنترنت، يفتحه التطبيق من أي مكان في العالم
-بدون شرط نفس شبكة الواي فاي.
+النظام المباشر الآن:
 
-نستخدم **Render.com** (خطة مجانية) + **Docker** (الملف جاهز في المشروع).
-كل ما يلزم: حساب GitHub مجاني + حساب Render مجاني.
+| الجزء | الخدمة | الرابط |
+|---|---|---|
+| التطبيق + الـ API | **Vercel** (خطة Hobby — مجانية، بدون بطاقة) | `https://gold-pulse-iota.vercel.app` |
+| قاعدة البيانات | **Neon PostgreSQL** (خطة مجانية، Frankfurt) | — |
 
----
-
-## 1) إنشاء مستودع GitHub (مرة واحدة)
-
-1. حمّل **GitHub Desktop**: <https://desktop.github.com> وثبّته.
-2. أنشئ حساب GitHub مجاني إن لم يكن لديك.
-3. من GitHub Desktop: **File ← Add local repository** واختر المجلد:
-   `C:\Users\tahali\Documents\Default Project\gold_pulse`
-   (إن لم يظهر كمستودع، اختر **create a repository** بنفس المسار).
-4. اكتب رسالة الالتزام: `Gold Pulse release` ← **Commit to main**.
-5. اضغط **Publish repository**.
-   - يمكنك إبقاؤه **Private** (خاص) — Render يسمح بربط المستودعات الخاصة.
-
-> ⚠️ لا ترفع مجلد `data/` أو `build/` — يوجد `.dockerignore` و`.gitignore` لهذا الغرض.
+> سبب ترك Render: خطته المجانية تطلب إضافة بطاقة (حجز 1$ للتحقق)، وهو ما لم ترده.
+> Vercel Hobby مجاني بالكامل بدون بطاقة، ولا ينام مثل Render (بدل الإقلاع البارد ~1–2 ثانية).
 
 ---
 
-## 2) النشر على Render
+## 1) كيف يعمل المشروع
 
-1. افتح <https://render.com> ← **Get Started** ← سجّل بحساب GitHub.
-2. من اللوحة: **New ← Blueprint**.
-3. اختر المستودع `gold-pulse` ← **Connect**.
-4. سيتعرّف Render على ملف `render.yaml` تلقائياً ← اضغط **Apply**.
-5. انتظر 3–6 دقائق حتى تظهر حالة **Live**.
-6. انسخ الرابط العلوي، شكله:
-   `https://gold-pulse-api.onrender.com`
+```
+Flutter APK / Web  ──HTTPS──▶  Vercel (FastAPI: backend.main:app)
+                                      │
+                                      ▼
+                              Neon PostgreSQL (DATABASE_URL)
+```
 
-### ضبط رمز المالك
+- ملف `pyproject.toml` يعرّف نقطة الدخول لـ Vercel:
 
-من صفحة الخدمة: **Environment ← Add Environment Variable**
+```toml
+[tool.vercel]
+entrypoint = "backend.main:app"
+```
+
+- الاعتماديات **يجب** أن تكون في `[project] dependencies` داخل `pyproject.toml`
+  (Vercel لا يقرأ `requirements.txt` في نمط Python zero-config).
+
+```toml
+dependencies = [
+    "fastapi==0.162.0",
+    "sqlalchemy==2.1.6",
+    "pydantic==2.12.5",
+    "psycopg[binary]==3.2.9",
+]
+```
+
+- `vercel.json` يحدّد المنطقة `fra1` و`maxDuration: 60`.
+
+---
+
+## 2) متغيرات البيئة على Vercel
+
+من: **Vercel ← المشروع `gold-pulse` ← Settings ← Environment Variables**
+(البيئة: Production)
 
 | الاسم | القيمة |
 |---|---|
-| `GOLD_ADMIN_PIN` | رمز سري تختاره (مثلاً `taha2026`) |
+| `GOLD_ADMIN_PIN` | `GoldPulse@2026` |
+| `GOLD_DATA_DIR` | `/tmp/gold-pulse` |
+| `DATABASE_URL` | رابط Neon المجمّع (pooled) |
 
-ثم **Save Changes** ← يعيد Render النشر تلقائياً.
+رابط Neon بصيغة:
+
+```
+postgresql://USER:PASSWORD@ep-xxxx-pooler.c-7.eu-central-1.aws.neon.tech/neondb?sslmode=require
+```
+
+> استخدم رابط **Pooler** (فيه `-pooler`) لأن Vercel Serverless يفتح اتصالات متعددة.
+> الكود يضبط `prepare_threshold=0` و`pool_size=2` للتوافق مع PgBouncer.
+> الجداول تُنشأ تلقائياً عند أول طلب (`Base.metadata.create_all`).
+
+---
+
+## 3) النشر / التحديث
+
+كل `push` إلى فرع `main` في GitHub ينشر تلقائياً:
+
+- المستودع: <https://github.com/Taha73994/gold-pulse>
+- Vercel يبني وينشر خلال ~20 ثانية.
+
+بعد أي تعديل في متغيرات البيئة يجب **Redeploy** من لوحة Vercel.
 
 ### اختبار سريع
 
-افتح في المتصفح:
-
-- `https://gold-pulse-api.onrender.com/health` → يجب أن يظهر `"ok": true`
-- `https://gold-pulse-api.onrender.com/docs` → واجهة الـ API
-
----
-
-## 3) ربط التطبيق بالخادم السحابي
-
-الخادم نفسه يقدّم **نسخة الويب/PWA** على الجذر، أي أن:
-
-- `https://your-app.onrender.com/` ← تطبيق الويب الكامل (آيفون + حاسبة).
-- `https://your-app.onrender.com/docs` ← واجهة الـ API.
-
-### آيفون / حاسبة (بدون بناء)
-
-افتح الرابط في Safari/Chrome ← **إضافة إلى الشاشة الرئيسية** ← يعمل كتطبيق.
-لا تحتاج أي بناء إضافي لأن الويب يتصل بالخادم من نفس العنوان تلقائياً.
-
-### أندرويد (APK)
-
-بعد حصولك على الرابط، شغّل على حاسبتك:
-
 ```powershell
-cd "C:\Users\tahali\Documents\Default Project\gold_pulse"
-powershell -ExecutionPolicy Bypass -File tools\build_release.ps1 -Server https://gold-pulse-api.onrender.com
+$base = "https://gold-pulse-iota.vercel.app"
+Invoke-RestMethod "$base/health"
+Invoke-RestMethod "$base/api/market"
+Invoke-RestMethod "$base/api/shops"
+Invoke-RestMethod "$base/api/ads"
 ```
 
-سيُنتج نسختين محدّثتين في `C:\Users\tahali\Pictures\APK`:
-
-- `gold_pulse.apk` — تعمل من أي مكان بالعالم.
-- `gold_pulse_web.zip` — للاستضافة على أي سيرفر آخر (اختياري، الخادم يقدّم الويب بنفسه).
+يجب أن ترجع جميعها `200` و`ok: true`.
 
 ---
 
-## ملاحظات مهمة عن الخطة المجانية
+## 4) الصور المرفوعة (محلات/إعلانات)
+
+الصور تُحفظ داخل جدول `media_files` في قاعدة البيانات
+وتُقدَّم عبر `/api/media/{name}` — لذلك **تبقى بعد كل إعادة نشر**.
+
+- رفع صورة: `POST /api/admin/upload` (يتطلب `X-Admin-Pin`).
+- الحد الأقصى: 3 ميغابايت، صيغ JPG / PNG / WEBP / GIF.
+
+---
+
+## 5) نسخة احتياطية / استرجاع
+
+```powershell
+$pin  = "GoldPulse@2026"
+$base = "https://gold-pulse-iota.vercel.app"
+
+# نسخة احتياطية
+Invoke-WebRequest "$base/api/admin/backup" -Headers @{ "X-Admin-Pin" = $pin } -OutFile "backup.json"
+
+# استرجاع
+$body = Get-Content "backup.json" -Raw
+Invoke-WebRequest "$base/api/admin/restore" -Method Post `
+  -Headers @{ "X-Admin-Pin" = $pin; "Content-Type" = "application/json" } -Body $body
+```
+
+النسخة تشمل: المحلات، الإعلانات، بيانات التواصل، والتنبيهات (بدون معرّفات `id` لتجنّب التعارض).
+
+---
+
+## 6) بناء APK جديد (إن غيّرت الرابط)
+
+```powershell
+cd "C:\Users\tahali\Documents\Default Project\gold_pulse\flutter\gold_pulse_app"
+$env:JAVA_HOME = "C:\Android\jdk17"
+$env:ANDROID_HOME = "C:\Android\sdk"
+C:\src\flutter\bin\flutter.bat build apk --release --dart-define=API_BASE=https://gold-pulse-iota.vercel.app
+```
+
+ثم انسخ الناتج إلى `C:\Users\tahali\Pictures\APK\gold_pulse.apk`:
+
+```powershell
+Copy-Item "build\app\outputs\flutter-apk\app-release.apk" `
+  "C:\Users\tahali\Pictures\APK\gold_pulse.apk" -Force
+```
+
+---
+
+## 7) ملاحظات الخطة المجانية
 
 | الموضوع | التفصيل |
 |---|---|
-| **السكون** | الخدمة تنام بعد 15 دقيقة بلا استخدام. أول فتح بعد النوم يستغرق ~30–50 ثانية ثم يعمل طبيعياً. |
-| **القرص** | غير دائم على الخطة المجانية: أي تعديل تجريه من لوحة المالك (محلات، إعلانات، تواصل) قد يضيع عند إعادة النشر. |
-| **الحل** | قبل أي تحديث للكود: خذ نسخة احتياطية ثم استرجعها (انظر أدناه). |
-| **الحدود** | 750 ساعة/شهر — كافية لخدمة واحدة تعمل باستمرار. |
-
-### نسخة احتياطية (قبل أي إعادة نشر)
-
-```powershell
-$pin = "taha2026"
-$url = "https://gold-pulse-api.onrender.com"
-Invoke-WebRequest "$url/api/admin/backup" -Headers @{ "X-Admin-Pin" = $pin } -OutFile "backup.json"
-```
-
-### استرجاع النسخة
-
-```powershell
-$pin = "taha2026"
-$url = "https://gold-pulse-api.onrender.com"
-$body = Get-Content "backup.json" -Raw
-Invoke-WebRequest "$url/api/admin/restore" -Method Post -Headers @{ "X-Admin-Pin" = $pin; "Content-Type" = "application/json" } -Body $body
-```
+| **البطاقة** | لا تُطلب في Vercel Hobby ولا في Neon Free. |
+| **الاستخدام** | Vercel Hobby مخصّص للاستخدام الشخصي غير التجاري — هذا مشروع شخصي. |
+| **الإقلاع البارد** | ~1–2 ثانية بعد فترة خمول (أفضل بكثير من Render). |
+| **قاعدة البيانات** | Neon Free: مساحة كافية للاستخدام المنخفض، والبيانات دائمة. |
+| **الحدود** | Vercel: 100 GB نقل/شهر — أكثر من كافٍ. |
 
 ---
 
-## بديل: قاعدة بيانات دائمة (اختياري)
-
-إذا أردت ألا تضيع البيانات أبداً، استخدم **Neon** (PostgreSQL مجاني):
-
-1. <https://neon.tech> ← أنشئ مشروعاً مجانياً ← انسخ `Connection string`.
-2. في Render: **Environment ← Add** المتغير `DATABASE_URL` بالقيمة المنسوخة.
-3. أعد النشر — سيُنشئ التطبيق الجداول تلقائياً في Neon.
-
-> حزمة `psycopg` مثبّتة مسبقاً في صورة Docker، لا تحتاج أي تعديل.
-
----
-
-## تشغيل محلي (كما هو الآن)
+## 8) تشغيل محلي (للتطوير)
 
 ```bash
 cd gold_pulse
-python run.py          # http://0.0.0.0:8010
+python run.py          # http://0.0.0.0:8010 — PIN: taha2026
 ```
 
-الخادم المحلي يبقى مفيداً للتجربة والتطوير، لكن التطبيق الموزّع للمستخدمين
-يجب أن يشير إلى الرابط السحابي.
+يستخدم SQLite محلياً في `data/` عندما لا يكون `DATABASE_URL` مضبوطاً.
 
 ---
 

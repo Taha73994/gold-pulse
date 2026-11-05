@@ -4,6 +4,9 @@
 
 **المطوّر والمالك:** Taha Ali — © 2026 جميع الحقوق محفوظة.
 
+**النسخة المباشرة:** <https://gold-pulse-iota.vercel.app>
+**مستودع الكود:** <https://github.com/Taha73994/gold-pulse>
+
 ---
 
 ## 1. المكوّنات
@@ -86,19 +89,25 @@ flutter build windows --release
 
 ## 2.5 النشر على الإنترنت (استخدام من أي مكان)
 
-الخادم المحلي يعمل فقط داخل نفس شبكة الواي فاي. لتشغيل التطبيق من أي مكان:
+التطبيق منشور ويعمل من أي مكان في العالم بدون الحاجة لتشغيل الحاسبة:
 
-👉 اتبع **[DEPLOY.md](DEPLOY.md)** — نشر مجاني على Render عبر Docker (الملفات جاهزة:
-`Dockerfile`، `render.yaml`، `.dockerignore`).
+| الجزء | الخدمة | الرابط |
+|---|---|---|
+| التطبيق + الـ API | Vercel Hobby (مجاني، بدون بطاقة) | <https://gold-pulse-iota.vercel.app> |
+| قاعدة البيانات | Neon PostgreSQL (مجاني) | — |
 
-بعد الحصول على رابط الخادم السحابي، أعد بناء نسخ التوزيع بعنوانه:
+- ملف `pyproject.toml` يحدّد نقطة الدخول `backend.main:app` والاعتماديات.
+- كل `push` إلى `main` يُنشر تلقائياً على Vercel.
+- الصور المرفوعة تُحفظ في جدول `media_files` وتُقدَّم من `/api/media/{name}` فتبقى بعد إعادة النشر.
+
+👉 التفاصيل الكاملة والمتغيرات والنسخ الاحتياطي في **[DEPLOY.md](DEPLOY.md)**.
+
+لإعادة بناء APK يشير إلى السحابة:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\build_release.ps1 -Server https://your-app.onrender.com
+cd flutter\gold_pulse_app
+flutter build apk --release --dart-define=API_BASE=https://gold-pulse-iota.vercel.app
 ```
-
-سينتج `dist/gold_pulse.apk` و`dist/gold_pulse_web.zip` ويعيد نسخهما إلى
-`C:\Users\tahali\Pictures\APK`.
 
 > متغيرات البيئة المدعومة: `GOLD_ADMIN_PIN`، `GOLD_DATA_DIR`، `DATABASE_URL`
 > (PostgreSQL)، `PORT`، `GOLD_PRICE_ALERT_PCT`، `GOLD_PRICE_ALERT_MINUTES`.
@@ -126,7 +135,8 @@ powershell -ExecutionPolicy Bypass -File tools\build_release.ps1 -Server https:/
 لوحة المالك **لا تظهر للمستخدم العادي** إطلاقاً:
 
 - الدخول: **ضغط مطوّل على شعار التطبيق** في الأعلى ← إدخال رمز المالك.
-- الرمز الافتراضي: `taha2026` (غيّره عبر متغيّر البيئة `GOLD_ADMIN_PIN`).
+- الرمز الحالي على السحابة: `GoldPulse@2026` (يُضبط عبر `GOLD_ADMIN_PIN`).
+- الرمز المحلي للتطوير: `taha2026`.
 - بعد الدخول تظهر أيقونة «لوحة المالك» في شاشة «المزيد» وأزرار الإضافة.
 
 ### ما يمكن للمالك فعله
