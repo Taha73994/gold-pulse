@@ -1,2 +1,12 @@
+[project]
+name = "gold-pulse"
+version = "1.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.162.0",
+    "sqlalchemy==2.1.6",
+    "pydantic==2.12.5",
+]
+
 [tool.vercel]
 entrypoint = "backend.main:app"
