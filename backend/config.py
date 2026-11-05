@@ -4,8 +4,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# مجلد البيانات قابل للتغيير عبر GOLD_DATA_DIR (مفيد للاستضافة السحابية).
-DATA_DIR = Path(os.getenv("GOLD_DATA_DIR") or (BASE_DIR / "data"))
+# مجلد البيانات: محلياً data/ — على Vercel نظام الملفات للقراءة فقط عدا /tmp.
+_DEFAULT_DATA = Path("/tmp/gold-pulse") if os.getenv("VERCEL") else (BASE_DIR / "data")
+DATA_DIR = Path(os.getenv("GOLD_DATA_DIR") or _DEFAULT_DATA)
 UPLOAD_DIR = DATA_DIR / "uploads"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)

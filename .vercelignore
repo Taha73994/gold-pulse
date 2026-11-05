@@ -1,0 +1,12 @@
+.git
+.github
+flutter
+data
+tools
+dist
+*.db
+*.log
+__pycache__
+**/__pycache__
+.venv
+venv
