@@ -58,7 +58,7 @@ dependencies = [
 | `GOLD_LOCAL_SELL_MARGIN_PCT` | `3` (اختياري — هامش البيع للزبون) |
 | `GOLD_PARALLEL_FX_URL` | `https://iraqsm.com/data/fx.json` (اختياري — مصدر سعر السوق الموازي) |
 | `GOLD_PARALLEL_FX_FALLBACK_PREMIUM_PCT` | `11.5` (اختياري — هامش احتياطي إذا تعذر المصدر) |
-| `GOLD_FX_MARKET_CACHE_SECONDS` | `60` (اختياري — مدة كاش سعر السوق قبل إعادة جلبه) |
+| `GOLD_FX_MARKET_CACHE_SECONDS` | `30` (اختياري — مدة كاش سعر السوق قبل إعادة جلبه) |
 | `GOLD_RATE_ALERT_IQD` | `5` (اختياري — أقل تغيّر بالدينار يطلق تنبيه سعر الصرف) |
 | `GOLD_RATE_ALERT_WINDOW_MINUTES` | `180` (اختياري — نافذة المقارنة) |
 | `GOLD_RATE_ALERT_COOLDOWN_MINUTES` | `120` (اختياري — كتم التكرار) |

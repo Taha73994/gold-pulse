@@ -5,6 +5,7 @@ import '../core/theme.dart';
 import '../widgets/app_header.dart';
 import '../widgets/common.dart';
 import '../widgets/rate_sheet.dart';
+import 'alerts_screen.dart';
 import 'privacy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -84,6 +85,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
+                  _Section(
+                    title: l.displayUnit,
+                    icon: Icons.payments_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _Segmented(
+                          options: [
+                            (l.usdUnit, !state.iqdMode),
+                            (l.iqdUnit, state.iqdMode),
+                          ],
+                          onTap: (index) => state.setPriceUnit(index == 1),
+                        ),
+                        const SizedBox(height: 7),
+                        Text(
+                          l.pick(
+                            'الأونصة والمثقال والغرام تظهر بالعملة التي تختارها، محسوبة بسعر السوق الموازي.',
+                            'Ounce, mithqal and gram are shown in your chosen currency, calculated at the parallel market rate.',
+                          ),
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 10,
+                            height: 1.5,
+                            color: c.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _Section(
+                    title: l.alertSettings,
+                    icon: Icons.notifications_active_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _SwitchRow(
+                          icon: state.alertSound
+                              ? Icons.volume_up_rounded
+                              : Icons.volume_off_rounded,
+                          label: l.alertSound,
+                          value: state.alertSound,
+                          onChanged: state.setAlertSound,
+                        ),
+                        _SwitchRow(
+                          icon: Icons.notifications_outlined,
+                          label: l.notifications,
+                          value: state.notificationsEnabled,
+                          onChanged: (value) async {
+                            final ok = await state.setNotifications(value);
+                            if (!ok && context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(l.notificationsBlocked)),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 7),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: state.testAlert,
+                                icon: const Icon(
+                                  Icons.volume_up_rounded,
+                                  size: 16,
+                                ),
+                                label: Text(l.testAlert),
+                              ),
+                            ),
+                            const SizedBox(width: 7),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () => Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const AlertsScreen(),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.tune_rounded, size: 16),
+                                label: Text(l.alertCenter),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   _Section(
                     title: l.privacy,
                     icon: Icons.privacy_tip_outlined,
@@ -255,6 +344,47 @@ class _Section extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+class _SwitchRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SwitchRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: value ? c.green : c.muted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: c.ink,
+            ),
+          ),
+        ),
+        Switch.adaptive(
+          value: value,
+          activeThumbColor: c.gold,
+          onChanged: onChanged,
+        ),
+      ],
     );
   }
 }

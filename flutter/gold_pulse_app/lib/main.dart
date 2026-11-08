@@ -174,6 +174,7 @@ class ShellScreen extends StatefulWidget {
 
 class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
   int _index = _initialIndex();
+  int _lastBannerAlert = 0;
 
   static int _initialIndex() {
     final tab = Uri.base.queryParameters['tab'];
@@ -243,6 +244,86 @@ class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
 
   static void _noop(int _) {}
 
+  void _maybeShowAlertBanner() {
+    final state = AppScope.of(context);
+    final alert = state.latestAlert;
+    if (alert == null || alert.id == _lastBannerAlert) return;
+    _lastBannerAlert = alert.id;
+    final l = state.l;
+    final c = AppColors.of(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.clearSnackBars();
+      messenger.showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(12, 8, 12, 78),
+          backgroundColor: c.surfaceAlt,
+          elevation: 8,
+          duration: const Duration(seconds: 9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+            side: BorderSide(color: c.gold.withValues(alpha: 0.5)),
+          ),
+          content: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: c.gold.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(
+                  Icons.notifications_active_rounded,
+                  size: 20,
+                  color: c.gold,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      alert.displayTitle(state.en),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: c.ink,
+                      ),
+                    ),
+                    Text(
+                      alert.displayBody(state.en),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 9.5,
+                        height: 1.4,
+                        color: c.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          action: SnackBarAction(
+            label: l.details,
+            textColor: c.gold,
+            onPressed: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const AlertsScreen())),
+          ),
+        ),
+      );
+    });
+  }
+
   void _navigate(int index) {
     if (index == _index) return;
     setState(() => _index = index);
@@ -253,6 +334,7 @@ class _ShellScreenState extends State<ShellScreen> with WidgetsBindingObserver {
     final state = AppScope.of(context);
     final l = state.l;
     final c = AppColors.of(context);
+    _maybeShowAlertBanner();
 
     final pages = [
       HomeScreen(onNavigate: _navigate),

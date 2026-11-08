@@ -31,7 +31,7 @@ LOCAL_SELL_MARGIN_PCT = float(os.getenv("GOLD_LOCAL_SELL_MARGIN_PCT", "3.0"))
 
 # سعر صرف السوق الموازي (السوق السوداء) — الذهب في العراق يُسعَّر به.
 PARALLEL_FX_URL = os.getenv("GOLD_PARALLEL_FX_URL", "https://iraqsm.com/data/fx.json")
-FX_MARKET_CACHE_SECONDS = int(os.getenv("GOLD_FX_MARKET_CACHE_SECONDS", "60"))
+FX_MARKET_CACHE_SECONDS = int(os.getenv("GOLD_FX_MARKET_CACHE_SECONDS", "30"))
 PARALLEL_FX_FALLBACK_PREMIUM_PCT = float(
     os.getenv("GOLD_PARALLEL_FX_FALLBACK_PREMIUM_PCT", "11.5")
 )

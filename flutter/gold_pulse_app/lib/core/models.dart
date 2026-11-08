@@ -229,6 +229,42 @@ class MarketSnapshot {
 
   double gram(int karat) => iqdGram[karat] ?? 0;
 
+  /// سعر الصرف الموازي المستخدم فعلياً في تسعير الذهب (بيع السوق).
+  double get parallelRate {
+    final sell = fx?.parallelSell ?? 0;
+    if (sell > 0) return sell;
+    if (usdIqd > 0) return usdIqd;
+    return officialRate > 0 ? officialRate : 1500;
+  }
+
+  /// سعر الأونصة بالدينار العراقي على سعر السوق الموازي.
+  double get ounceIqd => usdOz * parallelRate;
+
+  /// المثقال العراقي = 5 غرام.
+  double get mithqal24 => gram(24) * 5;
+  double get mithqal21 =>
+      gram(21) > 0 ? gram(21) * 5 : (gram(24) > 0 ? gram(24) * 5 * 21 / 24 : 0);
+
+  double ounceIn(bool iqd) => iqd ? ounceIqd : usdOz;
+
+  double gramIn(int karat, bool iqd) {
+    final value = gram(karat);
+    if (iqd) return value;
+    return parallelRate > 0 ? value / parallelRate : 0;
+  }
+
+  double mithqalIn(int karat, bool iqd) {
+    final value = gramIn(karat, iqd);
+    return value * 5;
+  }
+
+  double get changeIqd => changeUsd * parallelRate;
+  double get highIqd => high * parallelRate;
+  double get lowIqd => low * parallelRate;
+
+  /// التغيّر اليومي بالدينار للأونصة.
+  double ounceChangeIn(bool iqd) => iqd ? changeIqd : changeUsd;
+
   factory MarketSnapshot.fromJson(Map<String, dynamic> j) {
     final grams = <int, double>{};
     final rawGrams = j['iqd_gram'];

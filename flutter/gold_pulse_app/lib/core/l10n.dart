@@ -148,6 +148,31 @@ class L10n {
   String get parallelDollarShort => en ? 'Market USD' : 'دولار السوق';
   String get officialGram24 => en ? 'Official 24K gram' : 'غرام 24 رسمي';
 
+  // ── وحدة العرض (دولار / دينار) ────────────────────────
+  String get displayUnit => en ? 'Display currency' : 'عملة العرض';
+  String get usdUnit => en ? 'USD' : 'دولار';
+  String get iqdUnit => en ? 'IQD' : 'دينار';
+  String get ouncePrice => en ? 'Gold ounce' : 'سعر الأونصة';
+  String get mithqal => en ? 'Mithqal' : 'المثقال';
+  String get mithqal21 => en ? 'Mithqal 21K (5 g)' : 'المثقال 21 (5 غرام)';
+  String get mithqal24 => en ? 'Mithqal 24K (5 g)' : 'المثقال 24 (5 غرام)';
+  String get mithqalNote =>
+      en ? 'The Iraqi mithqal is 5 grams.' : 'المثقال العراقي يساوي 5 غرامات.';
+  String get priceInParallel => en
+      ? 'Calculated at the parallel market rate'
+      : 'محسوب بسعر السوق الموازي';
+  String get ounceIqdNote => en
+      ? 'Ounce in dinars at the parallel rate'
+      : 'الأونصة بالدينار على سعر السوق الموازي';
+  String get autoRefreshEvery =>
+      en ? 'Auto-refresh every 20s' : 'تحديث تلقائي كل 20 ثانية';
+  String get nextUpdate => en ? 'Next update' : 'التحديث القادم';
+  String get inSeconds => en ? 's' : 'ث';
+  String get goldNow => en ? 'Gold now' : 'الذهب الآن';
+  String get rateNow => en ? 'Market dollar' : 'دولار السوق';
+  String get dailyRange => en ? 'Daily range' : 'نطاق اليوم';
+  String get priceAtAlert => en ? 'Price at alert' : 'السعر وقت التنبيه';
+
   // ── الإشارة ────────────────────────────────────────────
   String get signal => en ? 'Signal' : 'الإشارة';
   String get todaySignal => en ? "Today's signal" : 'إشارة اليوم';
@@ -438,6 +463,53 @@ class L10n {
   String get rateAlert => en ? 'Exchange rate' : 'سعر الصرف';
   String get systemAlert => en ? 'System' : 'النظام';
 
+  // ── مركز التنبيهات الذهبي ─────────────────────────────
+  String get alertsHeroTitle =>
+      en ? 'Clear gold alerts' : 'تنبيهات ذهبية واضحة';
+  String get alertsHeroHint => en
+      ? 'Gold and the parallel dollar are checked automatically every 20 seconds.'
+      : 'الذهب ودولار السوق يُفحصان تلقائياً كل 20 ثانية.';
+  String get alertsLive => en ? 'Alerts active' : 'التنبيهات تعمل';
+  String get latestAlert => en ? 'Latest alert' : 'أحدث تنبيه';
+  String get alertSound => en ? 'Alert sound' : 'صوت التنبيه';
+  String get alertSoundNote => en
+      ? 'A short gold chime plays inside the app when a new alert arrives.'
+      : 'تُشغّل نغمة ذهبية قصيرة داخل التطبيق عند وصول تنبيه جديد.';
+  String get notifications => en ? 'System notifications' : 'إشعارات النظام';
+  String get notificationsNote => en
+      ? 'Shows the alert as a phone notification with sound while the app is running in the background.'
+      : 'تظهر التنبيه كإشعار على الهاتف مع الصوت أثناء عمل التطبيق في الخلفية.';
+  String get notificationsBlocked => en
+      ? 'Allow notifications from the phone settings to receive them.'
+      : 'اسمح بالإشعارات من إعدادات الهاتف لتصلك التنبيهات.';
+  String get alertSettings => en ? 'Alert settings' : 'إعدادات التنبيهات';
+  String get testAlert => en ? 'Test alert' : 'تجربة التنبيه';
+  String get details => en ? 'Details' : 'التفاصيل';
+  String get whatToDo => en ? 'What should I do?' : 'ماذا أفعل؟';
+  String get understood => en ? 'Got it' : 'فهمت';
+  String get targetPrice => en ? 'My target price' : 'هدفي السعري';
+  String get targetPriceNote => en
+      ? 'Alert me when the gold ounce reaches this price (in dinars at the parallel rate).'
+      : 'نبّهني عندما تصل الأونصة إلى هذا السعر (بالدينار على سعر السوق الموازي).';
+  String get clearTarget => en ? 'Clear target' : 'مسح الهدف';
+  String get setTarget => en ? 'Set target' : 'تحديد الهدف';
+  String get targetReached => en ? 'Target reached' : 'تم الوصول للهدف';
+  String get noTarget => en ? 'No target set' : 'لا يوجد هدف محدد';
+  String get severityHigh => en ? 'High priority' : 'أولوية عالية';
+  String get severityMedium => en ? 'Medium' : 'متوسط';
+  String get severityInfo => en ? 'Info' : 'معلومة';
+  String get unreadOnly => en ? 'Unread' : 'غير مقروء';
+  String get allKinds => en ? 'All' : 'الكل';
+  String get noFilterResults =>
+      en ? 'No alerts match this filter.' : 'لا توجد تنبيهات تطابق هذا الفلتر.';
+  String get alertTipGold => en
+      ? 'Gold alerts are generated from real market moves, not promotional messages.'
+      : 'تنبيهات الذهب مبنية على حركة سوق حقيقية وليست رسائل دعائية.';
+  String get alertTipRate => en
+      ? 'When the parallel dollar moves, gold prices in Iraq move with it.'
+      : 'عندما يتحرك دولار السوق الموازي يتحرك معه سعر الذهب في العراق.';
+  String get openAlertCenter => en ? 'Open alert center' : 'فتح مركز التنبيهات';
+
   String kind(String code) {
     switch (code) {
       case 'signal':
@@ -672,6 +744,23 @@ class L10n {
   String usd(num value, {int digits = 2}) =>
       '\$${number(value, digits: digits)}';
   String iqd(num value) => '${number(value)} ${en ? 'IQD' : 'د.ع'}';
+
+  /// سعر بوحدة العرض المختارة (دولار أو دينار).
+  String priceText(num value, {required bool iqd, int? digits}) {
+    final d = digits ?? (iqd ? 0 : 2);
+    return iqd
+        ? '${number(value, digits: d)} ${en ? 'IQD' : 'د.ع'}'
+        : '\$${number(value, digits: d)}';
+  }
+
+  String priceCompact(num value, {required bool iqd}) {
+    if (!iqd) return '\$${number(value, digits: 2)}';
+    final abs = value.abs();
+    if (abs >= 1000000) {
+      return '${number(value / 1000000, digits: 2)} ${en ? 'M IQD' : 'مليون د.ع'}';
+    }
+    return '${number(value)} ${en ? 'IQD' : 'د.ع'}';
+  }
 
   /// نطاق سعري بالدولار يبقى مقروءاً من اليسار لليمين داخل النص العربي.
   String usdRange(num low, num high, {int digits = 0}) =>

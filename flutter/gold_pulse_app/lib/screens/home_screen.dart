@@ -10,6 +10,7 @@ import '../widgets/forecast_card.dart';
 import '../widgets/local_quote_card.dart';
 import '../widgets/parallel_rate_card.dart';
 import '../widgets/plan_sheet.dart';
+import '../widgets/price_unit_toggle.dart';
 import 'alerts_screen.dart';
 import 'ads_screen.dart';
 import 'calculator_screen.dart';
@@ -70,7 +71,7 @@ class HomeScreen extends StatelessWidget {
                     LocalQuoteCard(quote: market.local!),
                   ],
                   const SizedBox(height: 14),
-                  _QuickActions(l: l),
+                  _QuickActions(state: state),
                   const SizedBox(height: 18),
                   SectionHeader(
                     title: l.todaySignal,
@@ -263,7 +264,9 @@ class _PriceHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = AppScope.of(context);
     final c = AppColors.of(context);
+    final iqd = state.iqdMode;
     if (market == null) {
       return GoldGlow(
         child: SizedBox(
@@ -282,6 +285,10 @@ class _PriceHero extends StatelessWidget {
     final m = market!;
     final up = m.changePct >= 0;
     final color = up ? c.green : c.red;
+    final big = m.ounceIn(iqd);
+    final unitLabel = iqd ? l.pick('دينار / أونصة', 'IQD / ounce') : l.usdOz;
+    double conv(double usdValue) => iqd ? usdValue * m.parallelRate : usdValue;
+
     return GoldGlow(
       padding: const EdgeInsets.all(17),
       child: InkWell(
@@ -306,35 +313,28 @@ class _PriceHero extends StatelessWidget {
                 const SizedBox(width: 8),
                 Pill(text: l.live, color: c.green, fontSize: 8),
                 const Spacer(),
-                Text(
-                  '${l.updated} ${l.timeAgo(m.asOf)}',
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 9.5,
-                    color: c.muted,
-                  ),
-                ),
-                const SizedBox(width: 3),
+                const PriceUnitToggle(compact: true),
+                const SizedBox(width: 2),
                 Icon(Icons.chevron_left_rounded, size: 15, color: c.muted),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Flexible(
+                Expanded(
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                    alignment: AlignmentDirectional.centerStart,
                     child: Text(
-                      l.usd(m.usdOz, digits: 2),
+                      l.priceText(big, iqd: iqd, digits: iqd ? 0 : 2),
                       style: TextStyle(
                         fontFamily: 'Cairo',
-                        fontSize: 44,
+                        fontSize: iqd ? 36 : 44,
                         height: 1,
                         fontWeight: FontWeight.w800,
                         color: c.ink,
-                        letterSpacing: -1.5,
+                        letterSpacing: -1.2,
                       ),
                     ),
                   ),
@@ -344,42 +344,78 @@ class _PriceHero extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 7),
                   child: ChangeChip(
                     value: m.changePct,
-                    absolute: m.changeUsd,
+                    absolute: iqd ? m.changeIqd : m.changeUsd,
+                    absoluteDigits: iqd ? 0 : 2,
                     l: l,
                     large: true,
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 3),
             Row(
               children: [
                 Text(
-                  l.usdOz,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: 11,
-                    color: c.muted,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '${l.openLabel} ${l.number(m.open)} · ${l.highLabel} ${l.number(m.high)} · ${l.lowLabel} ${l.number(m.low)}',
+                  unitLabel,
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 9.5,
                     color: c.muted,
                   ),
                 ),
+                const SizedBox(width: 7),
+                Flexible(
+                  child: Text(
+                    iqd
+                        ? '≈ ${l.usd(m.usdOz, digits: 2)}'
+                        : '≈ ${l.priceText(m.ounceIqd, iqd: true)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 9,
+                      color: c.muted.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                const RefreshCountdown(dense: true),
               ],
             ),
             const SizedBox(height: 6),
-            Sparkline(values: m.spark, color: color, height: 44),
-            const SizedBox(height: 10),
+            Sparkline(values: m.spark, color: color, height: 42),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '${l.highLabel} ${l.priceText(conv(m.high), iqd: iqd)} · '
+                    '${l.lowLabel} ${l.priceText(conv(m.low), iqd: iqd)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: 9,
+                      color: c.muted,
+                    ),
+                  ),
+                ),
+                Text(
+                  l.priceInParallel,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 8.5,
+                    color: c.gold.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
             Divider(color: c.border, height: 1),
-            const SizedBox(height: 10),
+            const SizedBox(height: 9),
             Row(
               children: [24, 22, 21, 18].map((karat) {
-                final value = m.gram(karat);
+                final value = m.gramIn(karat, iqd);
                 return Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,20 +453,24 @@ class _PriceHero extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        l.number(value),
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: c.ink,
-                          height: 1.1,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          l.number(value, digits: iqd ? 0 : 2),
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: c.ink,
+                            height: 1.1,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        l.en ? 'IQD/g' : 'د.ع/غ',
+                        iqd
+                            ? (l.en ? 'IQD/g' : 'د.ع/غ')
+                            : (l.en ? '\$/g' : '\$/غ'),
                         style: TextStyle(
                           fontFamily: 'Cairo',
                           fontSize: 8.5,
@@ -445,10 +485,34 @@ class _PriceHero extends StatelessWidget {
             const SizedBox(height: 9),
             Row(
               children: [
+                Expanded(
+                  child: _MithqalMini(
+                    icon: Icons.scale_rounded,
+                    label: l.mithqal21,
+                    value: l.priceText(m.mithqalIn(21, iqd), iqd: iqd),
+                    other: l.priceText(m.mithqalIn(21, !iqd), iqd: !iqd),
+                    color: c.green,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: _MithqalMini(
+                    icon: Icons.scale_outlined,
+                    label: l.mithqal24,
+                    value: l.priceText(m.mithqalIn(24, iqd), iqd: iqd),
+                    other: l.priceText(m.mithqalIn(24, !iqd), iqd: !iqd),
+                    color: c.gold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Row(
+              children: [
                 Icon(Icons.currency_exchange_rounded, size: 12, color: c.muted),
                 const SizedBox(width: 4),
                 Text(
-                  '${l.parallelDollarShort} ${l.number(m.usdIqd, digits: 1)}',
+                  '${l.parallelDollarShort} ${l.number(m.parallelRate, digits: 1)}',
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     fontSize: 9.5,
@@ -457,10 +521,10 @@ class _PriceHero extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  l.priceSource,
+                  l.mithqalNote,
                   style: TextStyle(
                     fontFamily: 'Cairo',
-                    fontSize: 9,
+                    fontSize: 8.5,
                     color: c.muted,
                   ),
                 ),
@@ -473,17 +537,100 @@ class _PriceHero extends StatelessWidget {
   }
 }
 
-class _QuickActions extends StatelessWidget {
-  final dynamic l;
-  const _QuickActions({required this.l});
+class _MithqalMini extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String other;
+  final Color color;
+
+  const _MithqalMini({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.other,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(11),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 11, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                    color: c.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerStart,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+                color: color,
+                height: 1.15,
+              ),
+            ),
+          ),
+          Text(
+            other,
+            style: TextStyle(fontFamily: 'Cairo', fontSize: 8, color: c.muted),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActions extends StatelessWidget {
+  final AppState state;
+  const _QuickActions({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = state.l;
     final items = [
-      (Icons.calculate_rounded, l.calculator, const CalculatorScreen()),
-      (Icons.currency_exchange_rounded, l.currencies, const CurrencyScreen()),
-      (Icons.newspaper_rounded, l.news, const NewsScreen()),
-      (Icons.notifications_active_outlined, l.alerts, const AlertsScreen()),
+      (Icons.calculate_rounded, l.calculator, const CalculatorScreen(), 0),
+      (
+        Icons.currency_exchange_rounded,
+        l.currencies,
+        const CurrencyScreen(),
+        0,
+      ),
+      (Icons.newspaper_rounded, l.news, const NewsScreen(), 0),
+      (
+        Icons.notifications_active_outlined,
+        l.alerts,
+        const AlertsScreen(),
+        state.unreadAlerts,
+      ),
     ];
     return Row(
       children: items.map((item) {
@@ -493,6 +640,7 @@ class _QuickActions extends StatelessWidget {
             child: _QuickAction(
               icon: item.$1,
               label: item.$2,
+              badge: item.$4,
               onTap: () =>
                   Navigator.of(context)
                       .push(MaterialPageRoute(builder: (_) => item.$3)),
@@ -508,10 +656,12 @@ class _QuickAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final int badge;
   const _QuickAction({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.badge = 0,
   });
 
   @override
@@ -531,13 +681,43 @@ class _QuickAction extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: c.gold.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 17, color: c.gold),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: BoxDecoration(
+                      color: c.gold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(icon, size: 17, color: c.gold),
+                  ),
+                  if (badge > 0)
+                    PositionedDirectional(
+                      top: -5,
+                      end: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: c.red,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: c.surface, width: 1.4),
+                        ),
+                        child: Text(
+                          badge > 99 ? '99+' : '$badge',
+                          style: const TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 7.5,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(

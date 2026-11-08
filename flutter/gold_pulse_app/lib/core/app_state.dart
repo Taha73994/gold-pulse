@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api.dart';
 import 'l10n.dart';
 import 'models.dart';
+import 'notify.dart';
 
 class AppState extends ChangeNotifier {
   final ApiClient api = ApiClient();
@@ -17,10 +18,16 @@ class AppState extends ChangeNotifier {
   bool en = false;
   ThemeMode themeMode = ThemeMode.dark;
   bool autoRefresh = true;
+  bool iqdMode = true;
+  bool alertSound = true;
+  bool notificationsEnabled = false;
+  double? targetOunceIqd;
+  AlertItem? latestAlert;
   String deviceId = '';
   String adminPin = '';
   int myRating = 0;
   String historyRange = '1y';
+  static const int marketRefreshSeconds = 20;
 
   AppConfig config = AppConfig.fallback;
   MarketSnapshot? market;
@@ -59,12 +66,34 @@ class AppState extends ChangeNotifier {
   Timer? _analysisTimer;
   Timer? _presenceTimer;
   bool _disposed = false;
+  int _lastAlertId = 0;
+  double? _prevOunceIqd;
+  DateTime? _lastTargetAlertAt;
 
   L10n get l => L10n(en);
   String get langCode => en ? 'en' : 'ar';
   bool get isOwner => adminPin.isNotEmpty;
   int get unreadAlerts => alertsData?.unread ?? 0;
   int get activeUnread => alertsData?.items.where((a) => !a.isRead).length ?? 0;
+
+  /// ثواني متبقية حتى التحديث التلقائي التالي.
+  int get secondsToRefresh {
+    final at = marketUpdatedAt;
+    if (at == null) return marketRefreshSeconds;
+    final passed = DateTime.now().difference(at).inSeconds;
+    final left = marketRefreshSeconds - (passed % marketRefreshSeconds);
+    return left <= 0 ? marketRefreshSeconds : left;
+  }
+
+  int get secondsSinceRefresh {
+    final at = marketUpdatedAt;
+    return at == null ? 0 : DateTime.now().difference(at).inSeconds;
+  }
+
+  bool get hasFreshMarket {
+    final at = marketUpdatedAt;
+    return at != null && DateTime.now().difference(at).inSeconds < 45;
+  }
 
   List<AdItem> get homeAds =>
       ads.where((a) => a.placement == 'home' || a.isFeatured).take(6).toList();
@@ -105,10 +134,16 @@ class AppState extends ChangeNotifier {
     adminPin = p.getString('admin_pin') ?? '';
     myRating = p.getInt('my_rating') ?? 0;
     autoRefresh = p.getBool('auto_refresh') ?? true;
+    iqdMode = (p.getString('price_unit') ?? 'iqd') == 'iqd';
+    alertSound = p.getBool('alert_sound') ?? true;
+    notificationsEnabled = p.getBool('notifications') ?? false;
+    targetOunceIqd = p.getDouble('target_ounce_iqd');
+    _lastAlertId = p.getInt('last_alert_id') ?? 0;
     deviceId = p.getString('device_id') ?? _newDeviceId();
     if (p.getString('device_id') == null) {
       await p.setString('device_id', deviceId);
     }
+    await Notifier.init();
 
     await _bootstrap();
     if (adminPin.isNotEmpty) {
@@ -179,12 +214,15 @@ class AppState extends ChangeNotifier {
     _marketTimer?.cancel();
     _analysisTimer?.cancel();
     _presenceTimer?.cancel();
-    _marketTimer = Timer.periodic(const Duration(seconds: 20), (_) {
-      if (autoRefresh) {
-        loadMarket(silent: true);
-        loadAlerts(silent: true);
-      }
-    });
+    _marketTimer = Timer.periodic(
+      const Duration(seconds: marketRefreshSeconds),
+      (_) {
+        if (autoRefresh) {
+          loadMarket(silent: true);
+          loadAlerts(silent: true);
+        }
+      },
+    );
     _analysisTimer = Timer.periodic(const Duration(seconds: 60), (_) {
       if (autoRefresh) {
         loadAnalysis(silent: true);
@@ -228,6 +266,58 @@ class AppState extends ChangeNotifier {
     autoRefresh = value;
     await _prefs?.setBool('auto_refresh', value);
     _notify();
+  }
+
+  /// اختيار وحدة العرض: الدولار أو الدينار العراقي.
+  Future<void> setPriceUnit(bool iqd) async {
+    if (iqd == iqdMode) return;
+    iqdMode = iqd;
+    await _prefs?.setString('price_unit', iqd ? 'iqd' : 'usd');
+    _notify();
+  }
+
+  Future<void> setAlertSound(bool value) async {
+    alertSound = value;
+    await _prefs?.setBool('alert_sound', value);
+    if (value) await Notifier.playAlertSound();
+    _notify();
+  }
+
+  Future<bool> setNotifications(bool value) async {
+    notificationsEnabled = value;
+    if (value) {
+      final granted = await Notifier.requestPermission();
+      if (!granted) {
+        notificationsEnabled = false;
+        _notify();
+        return false;
+      }
+    }
+    await _prefs?.setBool('notifications', notificationsEnabled);
+    _notify();
+    return true;
+  }
+
+  Future<void> setTargetOunce(double? value) async {
+    targetOunceIqd = value;
+    if (value == null) {
+      await _prefs?.remove('target_ounce_iqd');
+    } else {
+      await _prefs?.setDouble('target_ounce_iqd', value);
+    }
+    _notify();
+  }
+
+  Future<void> testAlert() async {
+    await Notifier.playAlertSound();
+    await Notifier.showAlert(
+      id: 990001,
+      title: en ? 'Gold alert test' : 'تجربة تنبيه ذهبي',
+      body: en
+          ? 'This is how a Gold Pulse alert looks and sounds.'
+          : 'هكذا يظهر تنبيه نبض الذهب ويبدو صوته.',
+      severity: 'medium',
+    );
   }
 
   Future<void> setApiBase(String value) async {
@@ -274,6 +364,10 @@ class AppState extends ChangeNotifier {
     en = false;
     themeMode = ThemeMode.dark;
     autoRefresh = true;
+    iqdMode = true;
+    alertSound = true;
+    notificationsEnabled = false;
+    targetOunceIqd = null;
     adminPin = '';
     api.baseUrl = ApiClient.defaultBaseUrl;
     final p = _prefs;
@@ -283,6 +377,11 @@ class AppState extends ChangeNotifier {
       await p.remove('api_base');
       await p.remove('admin_pin');
       await p.remove('auto_refresh');
+      await p.remove('price_unit');
+      await p.remove('alert_sound');
+      await p.remove('notifications');
+      await p.remove('target_ounce_iqd');
+      await p.remove('last_alert_id');
     }
     clearData();
     await _bootstrap();
@@ -319,15 +418,63 @@ class AppState extends ChangeNotifier {
       _notify();
     }
     try {
-      market = await api.market(lang: langCode);
+      final next = await api.market(lang: langCode);
+      market = next;
       marketUpdatedAt = DateTime.now();
       lastError = null;
+      _checkTarget(next);
+      _prevOunceIqd = next.ounceIqd;
     } catch (e) {
       lastError = _cleanError(e);
     } finally {
       loadingMarket = false;
       _notify();
     }
+  }
+
+  /// تنبيه محلي عند وصول الأونصة إلى السعر الذي حدده المستخدم.
+  Future<void> _checkTarget(MarketSnapshot m) async {
+    final target = targetOunceIqd;
+    if (target == null || target <= 0 || m.ounceIqd <= 0) return;
+    final prev = _prevOunceIqd;
+    final price = m.ounceIqd;
+    final distance = (price - target).abs() / target;
+    final crossed =
+        prev != null &&
+        ((prev < target && price >= target) ||
+            (prev > target && price <= target));
+    if (!crossed && distance > 0.0015) return;
+    final now = DateTime.now();
+    if (_lastTargetAlertAt != null &&
+        now.difference(_lastTargetAlertAt!).inMinutes < 360) {
+      return;
+    }
+    _lastTargetAlertAt = now;
+    final title = en ? 'Target price reached' : 'وصل السعر إلى هدفك';
+    final body = en
+        ? 'Gold ounce is now ${l.moneyIqd(price)} — your target was ${l.moneyIqd(target)}.'
+        : 'سعر الأونصة الآن ${l.moneyIqd(price)} — هدفك كان ${l.moneyIqd(target)}.';
+    latestAlert = AlertItem(
+      id: now.millisecondsSinceEpoch ~/ 1000,
+      createdAt: now.toIso8601String(),
+      kind: 'price',
+      severity: 'high',
+      title: title,
+      titleEn: title,
+      body: body,
+      bodyEn: body,
+      action: 'WATCH',
+      price: m.usdOz,
+      isRead: false,
+    );
+    if (alertSound) await Notifier.playAlertSound();
+    await Notifier.showAlert(
+      id: latestAlert!.id,
+      title: title,
+      body: body,
+      severity: 'high',
+    );
+    _notify();
   }
 
   Future<void> loadAnalysis({bool silent = false}) async {
@@ -369,14 +516,44 @@ class AppState extends ChangeNotifier {
       _notify();
     }
     try {
-      alertsData = await api.alerts();
+      final next = await api.alerts();
+      alertsData = next;
       lastError = null;
+      _detectNewAlert(next);
     } catch (e) {
       lastError = _cleanError(e);
     } finally {
       loadingAlerts = false;
       _notify();
     }
+  }
+
+  /// كشف التنبيه الأحدث وإطلاق الصوت/الإشعار مرة واحدة فقط.
+  Future<void> _detectNewAlert(AlertsPayload payload) async {
+    if (payload.items.isEmpty) return;
+    AlertItem newest = payload.items.first;
+    for (final item in payload.items) {
+      if (item.id > newest.id) newest = item;
+    }
+    if (_lastAlertId == 0) {
+      _lastAlertId = newest.id;
+      await _prefs?.setInt('last_alert_id', _lastAlertId);
+      return;
+    }
+    if (newest.id <= _lastAlertId) return;
+    _lastAlertId = newest.id;
+    await _prefs?.setInt('last_alert_id', _lastAlertId);
+    latestAlert = newest;
+    if (alertSound) await Notifier.playAlertSound();
+    if (notificationsEnabled) {
+      await Notifier.showAlert(
+        id: newest.id,
+        title: newest.displayTitle(en),
+        body: newest.displayBody(en),
+        severity: newest.severity,
+      );
+    }
+    _notify();
   }
 
   Future<void> loadHistory(String range, {bool silent = false}) async {

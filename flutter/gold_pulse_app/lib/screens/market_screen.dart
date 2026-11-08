@@ -7,6 +7,7 @@ import '../widgets/charts.dart';
 import '../widgets/common.dart';
 import '../widgets/forecast_card.dart';
 import '../widgets/local_quote_card.dart';
+import '../widgets/metal_prices_card.dart';
 import '../widgets/parallel_rate_card.dart';
 
 class MarketScreen extends StatefulWidget {
@@ -110,6 +111,10 @@ class _MarketScreenState extends State<MarketScreen> {
                         onRetry: () => state.loadHistory(state.historyRange),
                         l: l,
                       ),
+                    if (market != null) ...[
+                      MetalPricesCard(market: market),
+                      const SizedBox(height: 14),
+                    ],
                     if (market?.fx != null) ...[
                       ParallelRateCard(
                         fx: market!.fx!,

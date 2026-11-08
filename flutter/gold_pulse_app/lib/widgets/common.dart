@@ -183,6 +183,7 @@ class ChangeChip extends StatelessWidget {
   final double? absolute;
   final L10n l;
   final bool large;
+  final int absoluteDigits;
 
   const ChangeChip({
     super.key,
@@ -190,6 +191,7 @@ class ChangeChip extends StatelessWidget {
     required this.l,
     this.absolute,
     this.large = false,
+    this.absoluteDigits = 2,
   });
 
   @override
@@ -199,7 +201,7 @@ class ChangeChip extends StatelessWidget {
     final color = up ? c.green : c.red;
     final text = absolute == null
         ? l.percent(value, sign: true)
-        : '${up ? '+' : ''}${l.number(absolute!, digits: 2)} (${l.percent(value, sign: true)})';
+        : '${up ? '+' : ''}${l.number(absolute!, digits: absoluteDigits)} (${l.percent(value, sign: true)})';
     // عزل الاتجاه حتى يظهر +104.50 (2.65%+) من اليسار لليمين داخل واجهة RTL.
     final display = '\u2066$text\u2069';
     return Container(
@@ -701,6 +703,64 @@ class GoldGlow extends StatelessWidget {
         ],
       ),
       child: Padding(padding: padding, child: child),
+    );
+  }
+}
+
+/// مؤشر التحديث التلقائي مع عدّاد تنازلي بالثواني.
+class RefreshCountdown extends StatefulWidget {
+  final bool dense;
+  final Color? color;
+
+  const RefreshCountdown({super.key, this.dense = false, this.color});
+
+  @override
+  State<RefreshCountdown> createState() => _RefreshCountdownState();
+}
+
+class _RefreshCountdownState extends State<RefreshCountdown> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final l = state.l;
+    final c = AppColors.of(context);
+    final color = widget.color ?? c.green;
+    final seconds = state.secondsToRefresh;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: widget.dense ? 5 : 6,
+          height: widget.dense ? 5 : 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '${l.nextUpdate} $seconds${l.inSeconds}',
+          style: TextStyle(
+            fontFamily: 'Cairo',
+            fontSize: widget.dense ? 8.5 : 9.5,
+            fontWeight: FontWeight.w600,
+            color: c.muted,
+          ),
+        ),
+      ],
     );
   }
 }
