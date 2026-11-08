@@ -24,8 +24,51 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
     super.dispose();
   }
 
-  double _num() =>
-      double.tryParse(_amount.text.replaceAll(',', '.').trim()) ?? 0;
+  /// تحويل الأرقام العربية/الفارسية وفهم الفاصلة كفاصل آلاف أو عشري.
+  double _parseAmount(String input) {
+    var text = input.trim();
+    if (text.isEmpty) return 0;
+    const arabic = '٠١٢٣٤٥٦٧٨٩';
+    const persian = '۰۱۲۳۴۵۶۷۸۹';
+    final buffer = StringBuffer();
+    for (final rune in text.runes) {
+      final ch = String.fromCharCode(rune);
+      final ai = arabic.indexOf(ch);
+      final pi = persian.indexOf(ch);
+      if (ai >= 0) {
+        buffer.write(ai);
+      } else if (pi >= 0) {
+        buffer.write(pi);
+      } else {
+        buffer.write(ch);
+      }
+    }
+    text = buffer
+        .toString()
+        .replaceAll(' ', '')
+        .replaceAll('\u00A0', '')
+        .replaceAll('\u066B', '.')
+        .replaceAll('\u066C', ',');
+    if (text.contains(',') && text.contains('.')) {
+      text = text.replaceAll(',', '');
+    } else if (text.contains(',')) {
+      final parts = text.split(',');
+      final thousands =
+          parts.length > 1 && parts.skip(1).every((part) => part.length == 3);
+      text = thousands ? parts.join() : text.replaceAll(',', '.');
+    }
+    return double.tryParse(text) ?? 0;
+  }
+
+  /// أرقام مناسبة لعرض سعر الصرف حسب حجمه.
+  int _rateDigits(double value) {
+    final abs = value.abs();
+    if (abs >= 1000) return 0;
+    if (abs >= 10) return 2;
+    if (abs >= 1) return 3;
+    if (abs >= 0.01) return 5;
+    return 7;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,12 +87,25 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
 
     final from = find(_from);
     final to = find(_to);
-    final amount = _num();
-    final result = from == null || to == null || from.perUsd == 0
+    final amount = _parseAmount(_amount.text);
+
+    // الدولار العراقي يُحوَّل بسعر السوق الموازي (نفس أساس تسعير الذهب).
+    final parallelIqd = state.market?.fx?.parallelSell ?? 0;
+    double perUsdOf(CurrencyRate? item) {
+      if (item == null) return 0;
+      if (item.code == 'IQD' && parallelIqd > 0) return parallelIqd;
+      return item.perUsd;
+    }
+
+    final fromPerUsd = perUsdOf(from);
+    final toPerUsd = perUsdOf(to);
+    final result = fromPerUsd <= 0 || toPerUsd <= 0
         ? 0.0
-        : amount / from.perUsd * to.perUsd;
+        : amount / fromPerUsd * toPerUsd;
+    final unitRate = fromPerUsd <= 0 ? 0.0 : toPerUsd / fromPerUsd;
     final goldUsdOz = state.market?.usdOz ?? state.analysis?.price ?? 0;
     final gram24Usd = goldUsdOz / 31.1035;
+    final usingParallel = parallelIqd > 0;
 
     return Scaffold(
       body: SafeArea(
@@ -96,7 +152,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                             ),
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
-                                RegExp(r'[0-9.,]'),
+                                RegExp(r'[0-9.,\u0660-\u0669\u06F0-\u06F9]'),
                               ),
                             ],
                             onChanged: (_) => setState(() {}),
@@ -197,13 +253,37 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                         Text(
                           from == null || to == null
                               ? ''
-                              : '1 $_from = ${l.number(to.usdRate / from.usdRate, digits: to.decimals)} $_to',
+                              : '1 $_from = ${l.number(unitRate, digits: _rateDigits(unitRate))} $_to',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: 11,
                             color: c.muted,
                           ),
                         ),
+                        if (usingParallel) ...[
+                          const SizedBox(height: 3),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.currency_exchange_rounded,
+                                size: 11,
+                                color: c.gold,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                l.pick(
+                                  'الدينار بسعر السوق الموازي: 1\$ = ${l.number(parallelIqd, digits: 0)} د.ع',
+                                  'IQD uses the parallel rate: \$1 = ${l.number(parallelIqd, digits: 0)} IQD',
+                                ),
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 9,
+                                  color: c.gold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -239,7 +319,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                   ),
                                 ),
                                 Text(
-                                  '${l.number(gram24Usd * (to?.perUsd ?? 0), digits: to?.decimals ?? 2)} ${to?.symbol ?? ''}',
+                                  '${l.number(gram24Usd * toPerUsd, digits: to?.decimals ?? 2)} ${to?.symbol ?? ''}',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
                                     fontSize: 17,
@@ -262,10 +342,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                 ),
                               ),
                               Text(
-                                l.number(
-                                  to?.perUsd ?? 0,
-                                  digits: to?.decimals ?? 2,
-                                ),
+                                l.number(toPerUsd, digits: to?.decimals ?? 2),
                                 style: TextStyle(
                                   fontFamily: 'Cairo',
                                   fontSize: 12,
@@ -340,7 +417,7 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                   ),
                                   Text(
                                     l.number(
-                                      item.perUsd,
+                                      perUsdOf(item),
                                       digits: item.decimals,
                                     ),
                                     style: TextStyle(
@@ -350,6 +427,14 @@ class _CurrencyScreenState extends State<CurrencyScreen> {
                                       color: isTarget ? c.gold : c.ink,
                                     ),
                                   ),
+                                  if (item.code == 'IQD' && usingParallel) ...[
+                                    const SizedBox(width: 4),
+                                    Pill(
+                                      text: l.pick('سوق', 'market'),
+                                      color: c.gold,
+                                      fontSize: 7.5,
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),

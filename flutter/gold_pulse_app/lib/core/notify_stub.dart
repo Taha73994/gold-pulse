@@ -3,6 +3,8 @@ Future<void> initNotifications() async {}
 
 Future<bool> requestNotificationPermission() async => false;
 
+Future<bool> notificationsEnabled() async => false;
+
 Future<void> playAlertSound() async {}
 
 Future<void> showAlertNotification({

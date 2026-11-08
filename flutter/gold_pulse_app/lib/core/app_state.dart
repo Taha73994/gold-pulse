@@ -153,6 +153,31 @@ class AppState extends ChangeNotifier {
     ready = true;
     _notify();
     _startTimers();
+    _prepareNotifications();
+  }
+
+  /// يطلب إذن الإشعارات أول مرة، ويزامن الحالة مع إعدادات الهاتف.
+  Future<void> _prepareNotifications() async {
+    final p = _prefs;
+    if (p == null) return;
+    final asked = p.getBool('notif_asked') ?? false;
+    if (!asked) {
+      final granted = await Notifier.requestPermission();
+      notificationsEnabled = granted;
+      await p.setBool('notif_asked', true);
+      await p.setBool('notifications', granted);
+      if (granted) await Notifier.init();
+      _notify();
+      return;
+    }
+    if (p.getBool('notifications') == true) {
+      final allowed = await Notifier.areEnabled();
+      if (allowed != notificationsEnabled) {
+        notificationsEnabled = allowed;
+        if (!allowed) await p.setBool('notifications', false);
+        _notify();
+      }
+    }
   }
 
   Future<void> _bootstrap() async {
@@ -380,6 +405,7 @@ class AppState extends ChangeNotifier {
       await p.remove('price_unit');
       await p.remove('alert_sound');
       await p.remove('notifications');
+      await p.remove('notif_asked');
       await p.remove('target_ounce_iqd');
       await p.remove('last_alert_id');
     }

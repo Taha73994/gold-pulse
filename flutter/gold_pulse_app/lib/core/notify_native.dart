@@ -21,6 +21,15 @@ Future<bool> requestNotificationPermission() async {
   }
 }
 
+Future<bool> notificationsEnabled() async {
+  try {
+    final result = await _channel.invokeMethod<bool>('status');
+    return result ?? false;
+  } catch (_) {
+    return false;
+  }
+}
+
 Future<void> playAlertSound() async {
   try {
     await _channel.invokeMethod<bool>('playSound');

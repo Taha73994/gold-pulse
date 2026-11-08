@@ -14,6 +14,7 @@ import 'currency_screen.dart';
 import 'news_screen.dart';
 import 'privacy_screen.dart';
 import 'settings_screen.dart';
+import 'zakat_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -34,6 +35,11 @@ class MoreScreen extends StatelessWidget {
         Icons.currency_exchange_rounded,
         l.currencies,
         () => _push(context, const CurrencyScreen()),
+      ),
+      (
+        Icons.volunteer_activism_rounded,
+        l.pick('زكاة الذهب', 'Gold zakat'),
+        () => _push(context, const ZakatScreen()),
       ),
       (
         Icons.newspaper_rounded,

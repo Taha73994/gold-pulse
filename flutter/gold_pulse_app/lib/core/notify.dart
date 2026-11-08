@@ -8,6 +8,9 @@ class Notifier {
   static Future<bool> requestPermission() =>
       impl.requestNotificationPermission();
 
+  /// هل الإشعارات مسموحة حالياً من إعدادات الهاتف؟
+  static Future<bool> areEnabled() => impl.notificationsEnabled();
+
   static Future<void> playAlertSound() => impl.playAlertSound();
 
   static Future<void> showAlert({

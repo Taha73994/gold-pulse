@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -20,6 +21,7 @@ class MainActivity : FlutterActivity() {
     private val channelName = "iq.goldpulse/notify"
     private val alertsChannel = "gold_pulse_alerts"
     private var player: MediaPlayer? = null
+    private var permissionResult: MethodChannel.Result? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,8 +38,11 @@ class MainActivity : FlutterActivity() {
                         result.success(1)
                     }
                     "requestPermission" -> {
-                        result.success(requestAlertPermission())
+                        requestAlertPermission(result)
                     }
+                    "status" -> result.success(
+                        NotificationManagerCompat.from(this).areNotificationsEnabled()
+                    )
                     "playSound" -> result.success(playAlertSound())
                     "showAlert" -> {
                         val id = call.argument<Int>("id") ?: 1
@@ -76,15 +81,37 @@ class MainActivity : FlutterActivity() {
         manager.createNotificationChannel(channel)
     }
 
-    private fun requestAlertPermission(): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
+    private fun requestAlertPermission(result: MethodChannel.Result) {
+        if (NotificationManagerCompat.from(this).areNotificationsEnabled() &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED)
         ) {
-            return true
+            result.success(true)
+            return
         }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            result.success(NotificationManagerCompat.from(this).areNotificationsEnabled())
+            return
+        }
+        // Keep the Dart future open until the user answers the system dialog.
+        permissionResult?.success(false)
+        permissionResult = result
         requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7201)
-        return true
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 7201) {
+            val granted = grantResults.isNotEmpty() &&
+                grantResults[0] == PackageManager.PERMISSION_GRANTED
+            permissionResult?.success(granted)
+            permissionResult = null
+        }
     }
 
     private fun playAlertSound(): Boolean {
@@ -152,6 +179,9 @@ class MainActivity : FlutterActivity() {
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setSound(alertSoundUri())
+            .setVibrate(longArrayOf(0, 350, 160, 350))
             .setAutoCancel(true)
             .setColor(accent)
             .setContentIntent(pending)
