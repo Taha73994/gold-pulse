@@ -90,19 +90,28 @@ class MainActivity : FlutterActivity() {
     private fun playAlertSound(): Boolean {
         return try {
             player?.release()
-            val afd = resources.openRawResource(R.raw.gold_alert)
-            player = MediaPlayer().apply {
-                setDataSource(afd.fileDescriptor)
-                prepare()
-                start()
-                setOnCompletionListener {
-                    it.release()
-                    if (player === it) player = null
-                }
+            player = null
+            val afd = resources.openRawResourceFd(R.raw.gold_alert) ?: return false
+            val mp = MediaPlayer()
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.declaredLength)
+            mp.prepare()
+            mp.start()
+            mp.setOnCompletionListener { finished ->
+                finished.release()
+                if (player === finished) player = null
             }
+            player = mp
             afd.close()
             true
         } catch (_: Exception) {
+            player?.release()
+            player = null
             false
         }
     }
