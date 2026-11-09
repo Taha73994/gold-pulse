@@ -99,6 +99,18 @@ def _rates() -> dict:
         if value:
             rates[code] = float(value)
     rates["IQD"] = float(raw.get("IQD") or DEFAULT_USD_IQD)
+    iqd_source = "سعر عالمي (open.er-api)"
+    # الدينار العراقي في التحويل يجب أن يطابق سعر السوق الموازي المستخدم
+    # في تسعير الذهب، لا السعر العالمي/الرسمي.
+    try:
+        from .market import market_fx
+
+        parallel = float(market_fx().get("parallel_sell") or 0)
+        if parallel > 0:
+            rates["IQD"] = parallel
+            iqd_source = "السوق الموازي (IQWealth)"
+    except Exception:
+        pass
 
     # التومان: سوق طهران الحر أولاً، ثم آخر قراءة ناجحة، ثم قيمة احتياطية.
     toman_source = TOMAN_SOURCE
@@ -120,6 +132,7 @@ def _rates() -> dict:
         "updated": data.get("updated", ""),
         "source": data.get("source", ""),
         "toman_source": toman_source,
+        "iqd_source": iqd_source,
     }
     with _lock:
         _cache["fx"] = (now, payload)
@@ -163,6 +176,7 @@ def currency_payload() -> dict:
         "usd_iqd": round(float(rates.get("IQD") or DEFAULT_USD_IQD), 2),
         "usd_toman": round(float(rates.get("TOM") or 0), 2),
         "toman_source": data.get("toman_source", TOMAN_SOURCE),
+        "iqd_source": data.get("iqd_source", "السوق الموازي (IQWealth)"),
         "note_ar": (
             "الدولار والتومان بسعر السوق الحر (طهران)، والدينار العراقي بسعر السوق الموازي. "
             "الأسعار استرشادية وقد تختلف قليلاً بين الصرافين."
