@@ -1447,6 +1447,9 @@ class _ContactTabState extends State<_ContactTab> {
   late final TextEditingController _whatsapp;
   late final TextEditingController _telegram;
   late final TextEditingController _email;
+  late final TextEditingController _facebook;
+  late final TextEditingController _instagram;
+  late final TextEditingController _tiktok;
   bool _saving = false;
   bool _saved = false;
   String? _error;
@@ -1461,11 +1464,24 @@ class _ContactTabState extends State<_ContactTab> {
     _whatsapp = TextEditingController(text: c.whatsapp);
     _telegram = TextEditingController(text: c.telegram);
     _email = TextEditingController(text: c.email);
+    _facebook = TextEditingController(text: c.facebook);
+    _instagram = TextEditingController(text: c.instagram);
+    _tiktok = TextEditingController(text: c.tiktok);
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _nameEn, _phone, _whatsapp, _telegram, _email]) {
+    for (final c in [
+      _name,
+      _nameEn,
+      _phone,
+      _whatsapp,
+      _telegram,
+      _email,
+      _facebook,
+      _instagram,
+      _tiktok,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -1484,6 +1500,9 @@ class _ContactTabState extends State<_ContactTab> {
       'whatsapp': _whatsapp.text.trim(),
       'telegram': _telegram.text.trim(),
       'email': _email.text.trim(),
+      'facebook': _facebook.text.trim(),
+      'instagram': _instagram.text.trim(),
+      'tiktok': _tiktok.text.trim(),
     });
     if (!mounted) return;
     setState(() {
@@ -1534,6 +1553,24 @@ class _ContactTabState extends State<_ContactTab> {
           controller: _email,
           label: l.contactEmail,
           keyboard: TextInputType.emailAddress,
+        ),
+        const SizedBox(height: 10),
+        _AdminField(
+          controller: _facebook,
+          label: l.contactFacebook,
+          keyboard: TextInputType.url,
+        ),
+        const SizedBox(height: 10),
+        _AdminField(
+          controller: _instagram,
+          label: l.contactInstagram,
+          keyboard: TextInputType.url,
+        ),
+        const SizedBox(height: 10),
+        _AdminField(
+          controller: _tiktok,
+          label: l.contactTiktok,
+          keyboard: TextInputType.url,
         ),
         if (_error != null) ...[
           const SizedBox(height: 10),

@@ -30,7 +30,7 @@ from .config import (
 )
 from .contact import router as contact_router
 from .currency import convert, currency_payload
-from .database import Base, SessionLocal, engine, get_db
+from .database import Base, SessionLocal, engine, ensure_schema, get_db
 from .market import history_payload, market_fx, market_snapshot
 from .models import Alert, Feedback, MediaFile, OwnerContact, RateSnapshot  # noqa: F401 — لإنشاء الجداول
 from .news import get_news
@@ -61,6 +61,7 @@ async def _monitor_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
+    ensure_schema()
     global _monitor_task
     _monitor_task = asyncio.create_task(_monitor_loop())
     yield
@@ -78,7 +79,7 @@ app = FastAPI(
         "API لأسعار الذهب الحية، التحليل الفني والأساسي، معنويات الأخبار، "
         "دليل المحلات، الإعلانات، والعملات. أداة دعم قرار وليست نصيحة استثمارية."
     ),
-    version="1.2.2",
+    version="1.2.3",
     lifespan=lifespan,
 )
 
@@ -119,7 +120,7 @@ def health():
     return {
         "ok": True,
         "service": "gold-pulse-api",
-        "version": "1.2.2",
+        "version": "1.2.3",
         "time": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -131,7 +132,7 @@ def config(lang: str = "ar"):
         "app_name": "Gold Pulse" if lang == "en" else "نبض الذهب",
         "app_name_ar": "نبض الذهب",
         "app_name_en": "Gold Pulse",
-        "version": "1.2.2",
+        "version": "1.2.3",
         "owner": OWNER_NAME,
         "copyright": COPYRIGHT_EN if lang == "en" else COPYRIGHT_AR,
         "disclaimer": DISCLAIMER,

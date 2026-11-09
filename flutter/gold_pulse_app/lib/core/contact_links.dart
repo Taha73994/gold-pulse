@@ -21,6 +21,34 @@ class ContactLinks {
 
   static String email(String value) => 'mailto:${value.trim()}';
 
+  /// يقبل رابطاً كاملاً أو اسم مستخدم/معرّفاً.
+  static String facebook(String value) =>
+      _social(value, 'https://www.facebook.com/');
+
+  static String instagram(String value) =>
+      _social(value, 'https://www.instagram.com/');
+
+  static String tiktok(String value) {
+    final raw = value.trim();
+    if (raw.isEmpty) return '';
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    final handle = _handle(raw);
+    return 'https://www.tiktok.com/@$handle';
+  }
+
+  static String _social(String value, String base) {
+    final raw = value.trim();
+    if (raw.isEmpty) return '';
+    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+    return '$base${_handle(raw)}';
+  }
+
+  static String _handle(String value) {
+    var handle = value.trim();
+    if (handle.startsWith('@')) handle = handle.substring(1);
+    return handle.replaceAll(RegExp(r'^/+|/+$'), '');
+  }
+
   static String _clean(String value) => value.replaceAll(RegExp(r'[^\d+]'), '');
 }
 

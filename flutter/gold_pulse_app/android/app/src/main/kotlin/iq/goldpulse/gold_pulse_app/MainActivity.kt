@@ -21,8 +21,9 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AlertNotifications.createChannel(this)
-        GoldAlertScheduler.schedule(this)
+        // لا نسمح لأي خطأ في الإشعارات/العمل الخلفي بإغلاق التطبيق.
+        runCatching { AlertNotifications.createChannel(this) }
+        runCatching { GoldAlertScheduler.schedule(this) }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -31,8 +32,8 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "init" -> {
-                        AlertNotifications.createChannel(this)
-                        GoldAlertScheduler.schedule(this)
+                        runCatching { AlertNotifications.createChannel(this) }
+                        runCatching { GoldAlertScheduler.schedule(this) }
                         result.success(1)
                     }
                     "requestPermission" -> {

@@ -634,6 +634,9 @@ class L10n {
   String get contactWhatsapp => en ? 'WhatsApp' : 'واتساب';
   String get contactTelegram => en ? 'Telegram' : 'تلكرام';
   String get contactEmail => en ? 'Email' : 'البريد الإلكتروني';
+  String get contactFacebook => en ? 'Facebook' : 'فيسبوك';
+  String get contactInstagram => en ? 'Instagram' : 'إنستغرام';
+  String get contactTiktok => en ? 'TikTok' : 'تيك توك';
   String get contactOwner => en ? 'Contact the owner' : 'تواصل مع المالك';
   String get contactSubtitle => en
       ? 'Only the channels the owner filled in are shown.'

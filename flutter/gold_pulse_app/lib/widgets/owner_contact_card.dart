@@ -48,6 +48,27 @@ class OwnerContactCard extends StatelessWidget {
           url: ContactLinks.email(contact.email),
           color: c.blue,
         ),
+      if (contact.facebook.isNotEmpty)
+        ContactAction(
+          icon: Icons.facebook_rounded,
+          label: l.contactFacebook,
+          url: ContactLinks.facebook(contact.facebook),
+          color: const Color(0xFF1877F2),
+        ),
+      if (contact.instagram.isNotEmpty)
+        ContactAction(
+          icon: Icons.camera_alt_rounded,
+          label: l.contactInstagram,
+          url: ContactLinks.instagram(contact.instagram),
+          color: const Color(0xFFE1306C),
+        ),
+      if (contact.tiktok.isNotEmpty)
+        ContactAction(
+          icon: Icons.music_note_rounded,
+          label: l.contactTiktok,
+          url: ContactLinks.tiktok(contact.tiktok),
+          color: const Color(0xFF111111),
+        ),
     ];
 
     return SurfaceCard(

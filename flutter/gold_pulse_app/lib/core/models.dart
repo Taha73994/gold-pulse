@@ -1690,6 +1690,9 @@ class OwnerContact {
   final String whatsapp;
   final String telegram;
   final String email;
+  final String facebook;
+  final String instagram;
+  final String tiktok;
 
   const OwnerContact({
     required this.name,
@@ -1698,6 +1701,9 @@ class OwnerContact {
     required this.whatsapp,
     required this.telegram,
     required this.email,
+    required this.facebook,
+    required this.instagram,
+    required this.tiktok,
   });
 
   static const empty = OwnerContact(
@@ -1707,13 +1713,19 @@ class OwnerContact {
     whatsapp: '',
     telegram: '',
     email: '',
+    facebook: '',
+    instagram: '',
+    tiktok: '',
   );
 
   bool get hasAny =>
       phone.isNotEmpty ||
       whatsapp.isNotEmpty ||
       telegram.isNotEmpty ||
-      email.isNotEmpty;
+      email.isNotEmpty ||
+      facebook.isNotEmpty ||
+      instagram.isNotEmpty ||
+      tiktok.isNotEmpty;
 
   String displayName(bool en) =>
       (en && nameEn.isNotEmpty) ? nameEn : (name.isNotEmpty ? name : '');
@@ -1725,6 +1737,9 @@ class OwnerContact {
     whatsapp: _s(j['whatsapp']),
     telegram: _s(j['telegram']),
     email: _s(j['email']),
+    facebook: _s(j['facebook']),
+    instagram: _s(j['instagram']),
+    tiktok: _s(j['tiktok']),
   );
 }
 

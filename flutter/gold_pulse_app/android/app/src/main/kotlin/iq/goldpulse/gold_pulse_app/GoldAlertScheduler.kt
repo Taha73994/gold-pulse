@@ -14,20 +14,25 @@ object GoldAlertScheduler {
     private const val UNIQUE_NAME = "gold_pulse_background_alerts"
 
     fun schedule(context: Context) {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-        val request = PeriodicWorkRequestBuilder<GoldAlertWorker>(
-            15, TimeUnit.MINUTES,
-            5, TimeUnit.MINUTES
-        )
-            .setConstraints(constraints)
-            .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
-            .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            UNIQUE_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            request
-        )
+        // على بعض الأجهزة قد يفشل تهيئة WorkManager؛ يجب ألا يمنع ذلك فتح التطبيق.
+        try {
+            val constraints = Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+            val request = PeriodicWorkRequestBuilder<GoldAlertWorker>(
+                15, TimeUnit.MINUTES,
+                5, TimeUnit.MINUTES
+            )
+                .setConstraints(constraints)
+                .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
+                .build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                UNIQUE_NAME,
+                ExistingPeriodicWorkPolicy.UPDATE,
+                request
+            )
+        } catch (_: Throwable) {
+            // التطبيق يعمل؛ الإشعارات الخلفية فقط قد لا تُجدول على هذا الجهاز.
+        }
     }
 }

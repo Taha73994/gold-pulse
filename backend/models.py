@@ -102,6 +102,9 @@ class OwnerContact(Base):
     whatsapp: Mapped[str] = mapped_column(String(40), default="")
     telegram: Mapped[str] = mapped_column(String(80), default="")
     email: Mapped[str] = mapped_column(String(120), default="")
+    facebook: Mapped[str] = mapped_column(String(200), default="")
+    instagram: Mapped[str] = mapped_column(String(200), default="")
+    tiktok: Mapped[str] = mapped_column(String(200), default="")
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )

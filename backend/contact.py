@@ -19,6 +19,9 @@ class ContactIn(BaseModel):
     whatsapp: str = Field(default="", max_length=40)
     telegram: str = Field(default="", max_length=80)
     email: str = Field(default="", max_length=120)
+    facebook: str = Field(default="", max_length=200)
+    instagram: str = Field(default="", max_length=200)
+    tiktok: str = Field(default="", max_length=200)
 
 
 def _row(db: Session) -> OwnerContact:
@@ -39,6 +42,9 @@ def serialize(row: OwnerContact) -> dict:
         "whatsapp": row.whatsapp or "",
         "telegram": row.telegram or "",
         "email": row.email or "",
+        "facebook": row.facebook or "",
+        "instagram": row.instagram or "",
+        "tiktok": row.tiktok or "",
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
     }
 
@@ -49,7 +55,15 @@ def get_contact(db: Session = Depends(get_db)):
     data = serialize(_row(db))
     channels = {
         key: data[key]
-        for key in ("phone", "whatsapp", "telegram", "email")
+        for key in (
+            "phone",
+            "whatsapp",
+            "telegram",
+            "email",
+            "facebook",
+            "instagram",
+            "tiktok",
+        )
         if data[key]
     }
     return {"ok": True, "has_any": bool(channels), "channels": channels, **data}
@@ -64,6 +78,9 @@ def set_contact(data: ContactIn, db: Session = Depends(get_db)):
     row.whatsapp = data.whatsapp.strip()
     row.telegram = data.telegram.strip()
     row.email = data.email.strip()
+    row.facebook = data.facebook.strip()
+    row.instagram = data.instagram.strip()
+    row.tiktok = data.tiktok.strip()
     row.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(row)

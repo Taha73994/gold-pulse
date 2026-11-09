@@ -1,7 +1,7 @@
 """اتصال قاعدة البيانات — SQLite محلياً أو PostgreSQL عبر DATABASE_URL."""
 import os
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from .config import DB_PATH
@@ -36,6 +36,29 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 class Base(DeclarativeBase):
     pass
+
+
+def ensure_schema() -> None:
+    """إضافة أعمدة جديدة إلى قاعدة بيانات قائمة (SQLite وPostgreSQL).
+
+    create_all لا يعدّل جداول موجودة، لذلك نضيف أعمدة التواصل الاجتماعي
+    يدوياً إذا كانت غير موجودة.
+    """
+    inspector = inspect(engine)
+    if not inspector.has_table("owner_contact"):
+        return
+    existing = {column["name"] for column in inspector.get_columns("owner_contact")}
+    additions = {
+        "facebook": "VARCHAR(200) DEFAULT ''",
+        "instagram": "VARCHAR(200) DEFAULT ''",
+        "tiktok": "VARCHAR(200) DEFAULT ''",
+    }
+    with engine.begin() as connection:
+        for name, ddl in additions.items():
+            if name not in existing:
+                connection.execute(
+                    text(f"ALTER TABLE owner_contact ADD COLUMN {name} {ddl}")
+                )
 
 
 def get_db():
