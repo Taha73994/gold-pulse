@@ -22,8 +22,15 @@ def _log_returns(closes: list[float]) -> list[float]:
     return out
 
 
-def _prepare(direction: str, lang: str) -> tuple[str, str]:
-    if direction == "up":
+def _prepare(direction: str, action: str, lang: str) -> tuple[str, str]:
+    """لا نوصي بشراء/بيع إلا إذا اتفق سيناريو التوقع مع إشارة التحليل.
+
+    هذا يمنع التناقض الذي كان يحدث سابقاً: توقع هبوط بينما الإشارة
+    قصيرة المدى صاعدة (أو العكس)، فيظهر تنبيه مضلل للمستخدم.
+    """
+    bullish = action in ("BUY", "ACCUMULATE")
+    bearish = action in ("REDUCE", "SELL")
+    if direction == "up" and bullish:
         return (
             "prepare_buy",
             t(
@@ -32,13 +39,31 @@ def _prepare(direction: str, lang: str) -> tuple[str, str]:
                 "Prepare to buy in tranches — do not chase the price.",
             ),
         )
-    if direction == "down":
+    if direction == "down" and bearish:
         return (
             "prepare_sell",
             t(
                 lang,
                 "استعد لتخفيف المركز أو البيع — واحمِ رأس المال.",
                 "Prepare to trim or sell — protect your capital.",
+            ),
+        )
+    if direction == "up":
+        return (
+            "wait",
+            t(
+                lang,
+                "هناك ميل صاعد طفيف لكنه لا يتفق مع الإشارة الحالية؛ انتظر تأكيداً.",
+                "There is a slight upside tilt, but it does not agree with the current signal; wait for confirmation.",
+            ),
+        )
+    if direction == "down":
+        return (
+            "wait",
+            t(
+                lang,
+                "هناك ميل هابط طفيف لكنه لا يتفق مع الإشارة الحالية؛ انتظر تأكيداً.",
+                "There is a slight downside tilt, but it does not agree with the current signal; wait for confirmation.",
             ),
         )
     return (
@@ -58,6 +83,7 @@ def build_forecast(
     confidence: int,
     rsi_value: float | None,
     lang: str = "ar",
+    agreement: float = 1.0,
 ) -> dict:
     closes = [float(c["close"]) for c in candles if c.get("close")]
     if len(closes) < 40:
@@ -75,6 +101,10 @@ def build_forecast(
     returns = _log_returns(closes)[-120:]
     sigma = max(0.0035, pstdev(returns) if len(returns) > 2 else 0.01)
 
+    # تعارض الأطر الزمنية يوسّع عدم اليقين بدل اختلاق اتجاه وهمي.
+    agreement = max(0.0, min(1.0, float(agreement)))
+    sigma *= 1.0 + 0.35 * (1.0 - agreement)
+
     hist_drift = mean(returns[-20:]) if len(returns) >= 20 else 0.0
     hist_drift = max(-sigma * 0.6, min(sigma * 0.6, hist_drift))
 
@@ -88,7 +118,8 @@ def build_forecast(
         elif rsi_value < 30:
             signal_drift += sigma * 0.12
 
-    mu = 0.45 * hist_drift + 0.55 * signal_drift
+    conflict_shrink = 0.55 + 0.45 * agreement
+    mu = (0.45 * hist_drift + 0.55 * signal_drift) * conflict_shrink
     mu = max(-sigma * 0.45, min(sigma * 0.45, mu))
 
     day_seed = datetime.now(timezone.utc).timetuple().tm_yday
@@ -111,8 +142,10 @@ def build_forecast(
         low = _percentile(finals, 0.10)
         high = _percentile(finals, 0.90)
         expected_change = (expected - last) / last * 100
-        direction = "up" if up_prob >= 0.55 else "down" if up_prob <= 0.45 else "neutral"
-        prepare_code, prepare_text = _prepare(direction, lang)
+        # لا نعلن اتجاهاً إلا عند أفضلية واضحة (60/40)، وإلا نبقى محايدين.
+        direction = "up" if up_prob >= 0.60 else "down" if up_prob <= 0.40 else "neutral"
+        prepare_code, prepare_text = _prepare(direction, action, lang)
+        edge = abs(up_prob - 0.5) * 100
 
         if direction == "up":
             label = t(
@@ -164,6 +197,7 @@ def build_forecast(
                 "high": round(high, 2),
                 "expected_change_pct": round(expected_change, 2),
                 "direction": direction,
+                "edge": round(edge, 1),
                 "label": label,
                 "prepare": prepare_code,
                 "prepare_text": prepare_text,
@@ -173,17 +207,29 @@ def build_forecast(
 
     focus = horizons[1] if len(horizons) > 1 else horizons[0]
     summary_direction = focus["direction"]
-    if summary_direction == "up":
+    if summary_direction == "up" and focus["prepare"] == "prepare_buy":
         headline = t(
             lang,
-            f"استعد للشراء خلال {focus['days']} جلسات — احتمال الصعود {focus['up_probability']:.0f}%",
-            f"Prepare to buy within {focus['days']} sessions — {focus['up_probability']:.0f}% upside odds",
+            f"سيناريو صاعد خلال {focus['days']} جلسات — احتمال الصعود {focus['up_probability']:.0f}%",
+            f"Upside scenario over {focus['days']} sessions — {focus['up_probability']:.0f}% upside odds",
+        )
+    elif summary_direction == "down" and focus["prepare"] == "prepare_sell":
+        headline = t(
+            lang,
+            f"سيناريو هابط خلال {focus['days']} جلسات — احتمال الهبوط {focus['down_probability']:.0f}%",
+            f"Downside scenario over {focus['days']} sessions — {focus['down_probability']:.0f}% downside odds",
+        )
+    elif summary_direction == "up":
+        headline = t(
+            lang,
+            f"ميل صاعد طفيف ({focus['up_probability']:.0f}%) دون تأكيد من الإشارة — انتظر",
+            f"Slight upside tilt ({focus['up_probability']:.0f}%) without signal confirmation — wait",
         )
     elif summary_direction == "down":
         headline = t(
             lang,
-            f"استعد للبيع/التخفيف خلال {focus['days']} جلسات — احتمال الهبوط {focus['down_probability']:.0f}%",
-            f"Prepare to sell/trim within {focus['days']} sessions — {focus['down_probability']:.0f}% downside odds",
+            f"ميل هابط طفيف ({focus['down_probability']:.0f}%) دون تأكيد من الإشارة — انتظر",
+            f"Slight downside tilt ({focus['down_probability']:.0f}%) without signal confirmation — wait",
         )
     else:
         headline = t(
@@ -194,11 +240,11 @@ def build_forecast(
 
     model_confidence = int(
         max(
-            40,
+            38,
             min(
-                84,
-                confidence * 0.55
-                + abs(focus["up_probability"] - 50) * 0.65,
+                78,
+                confidence * (0.55 + 0.25 * agreement)
+                + max(0.0, focus["up_probability"] - 50.0) * 0.5,
             ),
         )
     )
@@ -210,10 +256,13 @@ def build_forecast(
             "daily_volatility_pct": round(sigma * 100, 2),
             "daily_drift_pct": round(mu * 100, 3),
             "paths": paths,
+            "timeframe_agreement": round(agreement, 2),
             "method": t(
                 lang,
-                "محاكاة مونت كارلو على التقلب التاريخي مع ميل من الإشارة الفنية والأساسية.",
-                "Monte Carlo simulation on historical volatility with a tilt from the technical and macro signal.",
+                "محاكاة مونت كارلو على التقلب التاريخي مع ميل من الإشارة الفنية والأساسية. "
+                "عند تعارض الإشارتين قصيرة ومتوسطة المدى يُقلَّص الميل ويُوسَّع نطاق الاحتمال.",
+                "Monte Carlo simulation on historical volatility with a tilt from the technical and macro signal. "
+                "When short- and medium-term signals conflict, the drift is shrunk and uncertainty widened.",
             ),
         },
         "horizons": horizons,
@@ -222,6 +271,7 @@ def build_forecast(
             "direction": summary_direction,
             "up_probability": focus["up_probability"],
             "down_probability": focus["down_probability"],
+            "edge": focus["edge"],
             "headline": headline,
             "prepare": focus["prepare"],
             "prepare_text": focus["prepare_text"],
@@ -229,6 +279,11 @@ def build_forecast(
             "range_high": focus["high"],
             "expected": focus["expected"],
             "confidence": model_confidence,
+            "confidence_note": t(
+                lang,
+                "الاحتمالات تقديرية وليست تنبؤاً. أفضلية أقل من 10 نقاط تعني غياب اتجاه واضح.",
+                "Probabilities are estimates, not predictions. An edge below 10 points means there is no clear direction.",
+            ),
         },
         "disclaimer": t(
             lang,

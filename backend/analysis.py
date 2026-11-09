@@ -180,7 +180,7 @@ def _rsi_component(rsi_value: float | None, weight: float, lang: str) -> dict:
                 f"RSI عند {rsi_value:.1f} — زخم إيجابي لكنه يقترب من التشبع",
                 f"RSI at {rsi_value:.1f} — positive momentum, nearing overbought",
             ),
-            0.3,
+            0.25,
             weight,
         )
     if rsi_value >= 45:
@@ -192,7 +192,7 @@ def _rsi_component(rsi_value: float | None, weight: float, lang: str) -> dict:
                 f"RSI عند {rsi_value:.1f} — زخم متوازن",
                 f"RSI at {rsi_value:.1f} — balanced momentum",
             ),
-            0.5,
+            0.0,
             weight,
         )
     if rsi_value >= 35:
@@ -204,7 +204,7 @@ def _rsi_component(rsi_value: float | None, weight: float, lang: str) -> dict:
                 f"RSI عند {rsi_value:.1f} — ضعف نسبي",
                 f"RSI at {rsi_value:.1f} — relative weakness",
             ),
-            -0.2,
+            -0.25,
             weight,
         )
     return _component(
@@ -630,10 +630,31 @@ def build_analysis(lang: str = "ar") -> dict:
 
     short = build_signal(True, ind, news, macro, lang)
     swing = build_signal(False, ind, news, macro, lang)
-    overall_score = short["score"] * 0.45 + swing["score"] * 0.55
+
+    # اتفاق الأطر الزمنية: كلما تعارضت الإشارة قصيرة المدى مع متوسطة المدى
+    # قلّت الثقة وابتعد النموذج عن إعلان اتجاه قاطع (كان هذا سبب تنبؤات مضللة).
+    s_score = float(short["score"])
+    w_score = float(swing["score"])
+    if s_score == 0 or w_score == 0:
+        agreement = 0.7
+    elif s_score * w_score > 0:
+        agreement = 0.75 + 0.25 * min(1.0, min(abs(s_score), abs(w_score)) / 30.0)
+    else:
+        agreement = max(0.2, 0.6 - (abs(s_score) + abs(w_score)) / 300.0)
+    conflict = s_score * w_score < 0
+
+    raw_overall = short["score"] * 0.45 + swing["score"] * 0.55
+    overall_score = raw_overall * (0.70 + 0.30 * agreement)
     overall_action = _action_for(overall_score)
+    # عند تعارض واضح ودرجة قريبة من الحياد لا نعلن شراء/بيعاً قاطعاً.
+    if conflict and agreement < 0.55 and abs(overall_score) < 25:
+        overall_action = "WAIT"
     overall_meta = _meta(overall_action, lang)
-    overall_confidence = int(round((short["confidence"] + swing["confidence"]) / 2))
+    overall_confidence = int(
+        round((short["confidence"] + swing["confidence"]) / 2 * (0.80 + 0.20 * agreement))
+    )
+    if conflict:
+        overall_confidence = max(42, overall_confidence - 3)
     levels = _levels(
         overall_action,
         ind["close"],
@@ -687,6 +708,7 @@ def build_analysis(lang: str = "ar") -> dict:
         overall_confidence,
         ind.get("rsi14"),
         lang,
+        agreement=agreement,
     )
 
     plan = {
@@ -719,6 +741,23 @@ def build_analysis(lang: str = "ar") -> dict:
         "horizon": t(lang, "1–3 أسابيع", "1–3 weeks"),
         "score": round(overall_score, 1),
         "confidence": overall_confidence,
+        "timeframe_agreement": round(agreement, 2),
+        "timeframe_conflict": conflict,
+        "credibility_note": t(
+            lang,
+            (
+                "الإشارة قصيرة المدى تتعارض مع متوسطة المدى؛ لذلك خُفِّضت الثقة "
+                "ولم يُعلن اتجاه قاطع. انتظر تأكيداً قبل التحرك."
+                if conflict
+                else "الإشارتان قصيرة ومتوسطة المدى متوافقتان، والثقة معروضة كتقدير احتمالي لا كضمان."
+            ),
+            (
+                "The short-term signal conflicts with the medium-term signal, so confidence "
+                "was reduced and no decisive direction was declared. Wait for confirmation."
+                if conflict
+                else "Short- and medium-term signals agree. Confidence is a probabilistic estimate, not a guarantee."
+            ),
+        ),
         "summary": swing["summary"],
         "verdict": plan["verdict"],
         "regime": regime,

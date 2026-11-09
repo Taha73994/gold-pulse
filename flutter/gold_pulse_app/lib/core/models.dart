@@ -864,6 +864,8 @@ class ForecastSummary {
   final double rangeHigh;
   final double expected;
   final int confidence;
+  final double edge;
+  final String confidenceNote;
 
   const ForecastSummary({
     required this.days,
@@ -877,6 +879,8 @@ class ForecastSummary {
     required this.rangeHigh,
     required this.expected,
     required this.confidence,
+    required this.edge,
+    required this.confidenceNote,
   });
 
   static const empty = ForecastSummary(
@@ -891,6 +895,8 @@ class ForecastSummary {
     rangeHigh: 0,
     expected: 0,
     confidence: 0,
+    edge: 0,
+    confidenceNote: '',
   );
 
   factory ForecastSummary.fromJson(Map<String, dynamic> j) => ForecastSummary(
@@ -905,6 +911,8 @@ class ForecastSummary {
     rangeHigh: _d(j['range_high']),
     expected: _d(j['expected']),
     confidence: _i(j['confidence']),
+    edge: _d(j['edge']),
+    confidenceNote: _s(j['confidence_note']),
   );
 }
 
@@ -984,6 +992,8 @@ class Analysis {
   final String generatedAt;
   final String disclaimer;
   final String methodology;
+  final String credibilityNote;
+  final bool timeframeConflict;
 
   const Analysis({
     required this.price,
@@ -1011,6 +1021,8 @@ class Analysis {
     required this.generatedAt,
     required this.disclaimer,
     required this.methodology,
+    required this.credibilityNote,
+    required this.timeframeConflict,
   });
 
   factory Analysis.fromJson(Map<String, dynamic> j) {
@@ -1090,6 +1102,8 @@ class Analysis {
       generatedAt: _s(j['generated_at']),
       disclaimer: _s(j['disclaimer']),
       methodology: _s(j['methodology']),
+      credibilityNote: _s(j['credibility_note']),
+      timeframeConflict: j['timeframe_conflict'] == true,
     );
   }
 }

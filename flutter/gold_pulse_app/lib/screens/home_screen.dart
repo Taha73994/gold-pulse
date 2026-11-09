@@ -872,6 +872,47 @@ class _SignalCard extends StatelessWidget {
               color: c.ink,
             ),
           ),
+          if (a.credibilityNote.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: (a.timeframeConflict ? c.amber : c.green).withValues(
+                  alpha: 0.08,
+                ),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: (a.timeframeConflict ? c.amber : c.green).withValues(
+                    alpha: 0.25,
+                  ),
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    a.timeframeConflict
+                        ? Icons.compare_arrows_rounded
+                        : Icons.verified_rounded,
+                    size: 15,
+                    color: a.timeframeConflict ? c.amber : c.green,
+                  ),
+                  const SizedBox(width: 7),
+                  Expanded(
+                    child: Text(
+                      a.credibilityNote,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: 10,
+                        height: 1.55,
+                        color: c.ink,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 11),
           _AdviceBlock(state: state, analysis: a),
           const SizedBox(height: 12),

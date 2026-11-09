@@ -17,8 +17,20 @@ HTTP_TIMEOUT = 20
 MARKET_CACHE_SECONDS = 15
 NEWS_CACHE_SECONDS = 300
 FX_CACHE_SECONDS = 1800
-CURRENCY_CACHE_SECONDS = 1800
+CURRENCY_CACHE_SECONDS = 900
 ALERT_MINUTES = 20
+
+# سعر الدولار مقابل التومان في السوق الإيراني الحر (وليس السعر الرسمي).
+# المصدر: TGJU (call1.tgju.org) — الرقم بالريال، نقسمه على 10 للتومان.
+TGJU_URL = os.getenv("GOLD_TGJU_URL", "https://call1.tgju.org/ajax.json")
+TGJU_MIRRORS = (
+    "https://call1.tgju.org/ajax.json",
+    "https://call2.tgju.org/ajax.json",
+    "https://call3.tgju.org/ajax.json",
+    "https://call4.tgju.org/ajax.json",
+)
+# قيمة احتياطية فقط إذا فشلت كل المصادر ولم توجد قراءة سابقة.
+USD_TOMAN_FALLBACK = float(os.getenv("GOLD_USD_TOMAN", "250000"))
 
 # تنبيهات حركة سعر الأونصة (ارتفاع/انخفاض)
 PRICE_ALERT_PCT = float(os.getenv("GOLD_PRICE_ALERT_PCT", "0.9"))

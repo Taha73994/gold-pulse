@@ -7,6 +7,10 @@ Future<bool> notificationsEnabled() async => false;
 
 Future<void> playAlertSound() async {}
 
+Future<void> openBatterySettings() async {}
+
+Future<void> openNotificationSettings() async {}
+
 Future<void> showAlertNotification({
   required int id,
   required String title,

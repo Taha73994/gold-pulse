@@ -68,7 +68,6 @@ class AppState extends ChangeNotifier {
   bool _disposed = false;
   int _lastAlertId = 0;
   double? _prevOunceIqd;
-  DateTime? _lastTargetAlertAt;
 
   L10n get l => L10n(en);
   String get langCode => en ? 'en' : 'ar';
@@ -131,6 +130,8 @@ class AppState extends ChangeNotifier {
         await p.remove('api_base');
       }
     }
+    // العامل الخلفي (WorkManager) يقرأ هذا العنوان بنفسه.
+    await p.setString('worker_api_base', api.baseUrl);
     adminPin = p.getString('admin_pin') ?? '';
     myRating = p.getInt('my_rating') ?? 0;
     autoRefresh = p.getBool('auto_refresh') ?? true;
@@ -348,6 +349,7 @@ class AppState extends ChangeNotifier {
   Future<void> setApiBase(String value) async {
     api.baseUrl = value.trim();
     await _prefs?.setString('api_base', api.baseUrl);
+    await _prefs?.setString('worker_api_base', api.baseUrl);
     clearData();
     await _bootstrap();
     _notify();
@@ -471,11 +473,11 @@ class AppState extends ChangeNotifier {
             (prev > target && price <= target));
     if (!crossed && distance > 0.0015) return;
     final now = DateTime.now();
-    if (_lastTargetAlertAt != null &&
-        now.difference(_lastTargetAlertAt!).inMinutes < 360) {
-      return;
-    }
-    _lastTargetAlertAt = now;
+    final nowMs = now.millisecondsSinceEpoch;
+    // نفس كتم التنبيه المستخدم في العامل الخلفي حتى لا يتكرر الإشعار.
+    final storedMs = _prefs?.getInt('target_alert_ms') ?? 0;
+    if (nowMs - storedMs < 360 * 60 * 1000) return;
+    await _prefs?.setInt('target_alert_ms', nowMs);
     final title = en ? 'Target price reached' : 'وصل السعر إلى هدفك';
     final body = en
         ? 'Gold ounce is now ${l.moneyIqd(price)} — your target was ${l.moneyIqd(target)}.'
@@ -495,7 +497,7 @@ class AppState extends ChangeNotifier {
     );
     if (alertSound) await Notifier.playAlertSound();
     await Notifier.showAlert(
-      id: latestAlert!.id,
+      id: 99001,
       title: title,
       body: body,
       severity: 'high',
@@ -561,6 +563,9 @@ class AppState extends ChangeNotifier {
     for (final item in payload.items) {
       if (item.id > newest.id) newest = item;
     }
+    // العامل الخلفي قد يكون أرسل التنبيه وحدّث آخر معرّف قبل فتح التطبيق.
+    final storedLast = _prefs?.getInt('last_alert_id') ?? 0;
+    if (storedLast > _lastAlertId) _lastAlertId = storedLast;
     if (_lastAlertId == 0) {
       _lastAlertId = newest.id;
       await _prefs?.setInt('last_alert_id', _lastAlertId);

@@ -36,6 +36,19 @@ Future<void> playAlertSound() async {
   } catch (_) {}
 }
 
+/// يفتح إعدادات تحسين البطارية كي لا يوقف النظام الفحص الدوري.
+Future<void> openBatterySettings() async {
+  try {
+    await _channel.invokeMethod<bool>('openBatterySettings');
+  } catch (_) {}
+}
+
+Future<void> openNotificationSettings() async {
+  try {
+    await _channel.invokeMethod<bool>('openNotificationSettings');
+  } catch (_) {}
+}
+
 Future<void> showAlertNotification({
   required int id,
   required String title,

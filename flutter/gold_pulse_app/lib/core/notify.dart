@@ -13,6 +13,12 @@ class Notifier {
 
   static Future<void> playAlertSound() => impl.playAlertSound();
 
+  /// فتح إعدادات البطارية/الإشعارات في الهاتف لضمان العمل في الخلفية.
+  static Future<void> openBatterySettings() => impl.openBatterySettings();
+
+  static Future<void> openNotificationSettings() =>
+      impl.openNotificationSettings();
+
   static Future<void> showAlert({
     required int id,
     required String title,

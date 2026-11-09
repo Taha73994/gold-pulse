@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_state.dart';
+import '../core/notify.dart';
 import '../core/theme.dart';
 import '../widgets/app_header.dart';
 import '../widgets/common.dart';
@@ -168,6 +169,70 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 9),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: c.gold.withValues(alpha: 0.07),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: c.gold.withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                l.pick(
+                                  'يفحص التطبيق السوق كل 15 دقيقة في الخلفية ويرسل الإشعار حتى لو كان مغلقاً. بعض الهواتف توقف التطبيقات لتوفير البطارية — اسمح بالعمل في الخلفية.',
+                                  'The app checks the market every 15 minutes in the background and alerts you even when closed. Some phones stop background apps to save battery — allow background activity.',
+                                ),
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: 10,
+                                  height: 1.55,
+                                  color: c.muted,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              Wrap(
+                                spacing: 7,
+                                runSpacing: 7,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: Notifier.openBatterySettings,
+                                    icon: const Icon(
+                                      Icons.battery_saver_rounded,
+                                      size: 15,
+                                    ),
+                                    label: Text(
+                                      l.pick(
+                                        'تحسين البطارية',
+                                        'Battery settings',
+                                      ),
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed:
+                                        Notifier.openNotificationSettings,
+                                    icon: const Icon(
+                                      Icons.notifications_active_outlined,
+                                      size: 15,
+                                    ),
+                                    label: Text(
+                                      l.pick(
+                                        'إعدادات الإشعارات',
+                                        'Notification settings',
+                                      ),
+                                      style: const TextStyle(fontSize: 11),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

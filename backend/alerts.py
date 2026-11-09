@@ -212,7 +212,18 @@ def record_analysis(db: Session, analysis: dict) -> list[Alert]:
     forecast = analysis.get("forecast") or {}
     fsummary = forecast.get("summary") or {}
     prepare = fsummary.get("prepare")
-    if prepare in ("prepare_buy", "prepare_sell") and forecast.get("ok"):
+    # لا نرسل تنبيه توقع إلا عند أفضلية واضحة وثقة كافية، وبعد اتفاق
+    # سيناريو التوقع مع الإشارة (يمنعه _prepare مسبقاً).
+    up_now = float(fsummary.get("up_probability") or 0)
+    down_now = float(fsummary.get("down_probability") or 0)
+    edge_now = max(up_now, down_now)
+    fconf_now = int(fsummary.get("confidence") or 0)
+    if (
+        prepare in ("prepare_buy", "prepare_sell")
+        and forecast.get("ok")
+        and edge_now >= 60.0
+        and fconf_now >= 52
+    ):
         direction_action = "BUY" if prepare == "prepare_buy" else "SELL"
         cutoff = now - timedelta(hours=24)
         exists = (
@@ -226,41 +237,43 @@ def record_analysis(db: Session, analysis: dict) -> list[Alert]:
         )
         if not exists:
             days = int(fsummary.get("days") or 5)
-            up = float(fsummary.get("up_probability") or 0)
-            down = float(fsummary.get("down_probability") or 0)
+            up = up_now
+            down = down_now
             low = float(fsummary.get("range_low") or 0)
             high = float(fsummary.get("range_high") or 0)
             expected = float(fsummary.get("expected") or 0)
-            fconf = int(fsummary.get("confidence") or 0)
+            fconf = fconf_now
             if direction_action == "BUY":
-                title = f"استعد للشراء خلال {days} جلسات — احتمال الصعود {up:.0f}%"
-                title_en = f"Prepare to buy within {days} sessions — {up:.0f}% upside odds"
+                title = f"سيناريو صاعد خلال {days} جلسات — احتمال الصعود {up:.0f}%"
+                title_en = f"Upside scenario over {days} sessions — {up:.0f}% upside odds"
                 body = (
                     f"النموذج يقدّر نطاقاً بين {_fmt(low)}$ و{_fmt(high)}$، بسعر متوقع {_fmt(expected)}$ "
-                    f"وثقة {fconf}%. جهّز دفعة أولى ولا تشترِ كامل المبلغ. هذه احتمالات وليست ضماناً."
+                    f"وثقة {fconf}%. الاحتمال {up:.0f}% صعود مقابل {down:.0f}% هبوط — "
+                    "جهّز دفعة أولى ولا تشترِ كامل المبلغ. هذه احتمالات وليست ضماناً."
                 )
                 body_en = (
                     f"The model estimates a range of ${_fmt(low)}–${_fmt(high)}, an expected price of "
-                    f"${_fmt(expected)}, and {fconf}% model confidence. Prepare a first tranche; do not buy "
-                    "the full amount. These are probabilities, not a guarantee."
+                    f"${_fmt(expected)}, and {fconf}% model confidence. Odds are {up:.0f}% up vs {down:.0f}% down — "
+                    "prepare a first tranche; do not buy the full amount. These are probabilities, not a guarantee."
                 )
             else:
-                title = f"استعد للبيع/التخفيف خلال {days} جلسات — احتمال الهبوط {down:.0f}%"
-                title_en = f"Prepare to sell/trim within {days} sessions — {down:.0f}% downside odds"
+                title = f"سيناريو هابط خلال {days} جلسات — احتمال الهبوط {down:.0f}%"
+                title_en = f"Downside scenario over {days} sessions — {down:.0f}% downside odds"
                 body = (
                     f"النموذج يقدّر نطاقاً بين {_fmt(low)}$ و{_fmt(high)}$، بسعر متوقع {_fmt(expected)}$ "
-                    f"وثقة {fconf}%. راجع وقف الخسارة وجهّز خطة تخفيف. هذه احتمالات وليست ضماناً."
+                    f"وثقة {fconf}%. الاحتمال {down:.0f}% هبوط مقابل {up:.0f}% صعود — "
+                    "راجع وقف الخسارة وجهّز خطة تخفيف. هذه احتمالات وليست ضماناً."
                 )
                 body_en = (
                     f"The model estimates a range of ${_fmt(low)}–${_fmt(high)}, an expected price of "
-                    f"${_fmt(expected)}, and {fconf}% model confidence. Review your stop and prepare a trim "
-                    "plan. These are probabilities, not a guarantee."
+                    f"${_fmt(expected)}, and {fconf}% model confidence. Odds are {down:.0f}% down vs {up:.0f}% up — "
+                    "review your stop and prepare a trim plan. These are probabilities, not a guarantee."
                 )
             alerts.append(
                 Alert(
                     created_at=now,
                     kind="forecast",
-                    severity="high" if direction_action != action else "medium",
+                    severity="high" if edge_now >= 65 and fconf >= 60 else "medium",
                     title=title,
                     title_en=title_en,
                     body=body,

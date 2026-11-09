@@ -4,9 +4,18 @@ import urllib.request
 import json
 from threading import Lock
 
-from .config import CURRENCY_CACHE_SECONDS, DEFAULT_USD_IQD, HTTP_TIMEOUT, USER_AGENT
+from .config import (
+    CURRENCY_CACHE_SECONDS,
+    DEFAULT_USD_IQD,
+    HTTP_TIMEOUT,
+    TGJU_MIRRORS,
+    TGJU_URL,
+    USD_TOMAN_FALLBACK,
+    USER_AGENT,
+)
 
 FX_URL = "https://open.er-api.com/v6/latest/USD"
+TOMAN_SOURCE = "TGJU — السوق الحر (طهران)"
 
 CURRENCIES = [
     {"code": "USD", "ar": "دولار أمريكي", "en": "US Dollar", "symbol": "$", "flag": "🇺🇸", "decimals": 2},
@@ -44,6 +53,30 @@ def _fetch() -> dict:
     }
 
 
+def _fetch_toman() -> float:
+    """سعر الدولار الحر مقابل التومان (ريال ÷ 10) من TGJU.
+
+    open.er-api يعطي سعراً رسمياً/مجمّعاً بعيداً عن سوق طهران الحر،
+    لذلك نعتمد TGJU ونستخدم قيمته بالريال مقسومة على 10.
+    """
+    last_error: Exception | None = None
+    for url in (TGJU_URL, *TGJU_MIRRORS):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT) as res:
+                data = json.loads(res.read().decode("utf-8"))
+            raw = (((data.get("current") or {}).get("price_dollar_rl") or {}).get("p"))
+            if raw is None:
+                raise RuntimeError("لا يوجد سعر دولار في استجابة TGJU")
+            rial = float(str(raw).replace(",", "").strip())
+            if rial <= 0:
+                raise RuntimeError("سعر دولار غير صالح من TGJU")
+            return round(rial / 10.0, 2)
+        except Exception as exc:  # mirror may be blocked; try the next one
+            last_error = exc
+    raise RuntimeError(f"تعذر جلب سعر التومان: {last_error}")
+
+
 def _rates() -> dict:
     global _last_good
     now = time.time()
@@ -60,21 +93,33 @@ def _rates() -> dict:
     raw = data["rates"]
     rates = {"USD": 1.0}
     for code in _codes:
-        if code == "USD":
-            continue
-        if code == "TOM":
-            irr = float(raw.get("IRR") or 0)
-            if irr:
-                rates["TOM"] = round(irr / 10.0, 4)
+        if code == "USD" or code == "TOM":
             continue
         value = raw.get(code)
         if value:
             rates[code] = float(value)
     rates["IQD"] = float(raw.get("IQD") or DEFAULT_USD_IQD)
+
+    # التومان: سوق طهران الحر أولاً، ثم آخر قراءة ناجحة، ثم قيمة احتياطية.
+    toman_source = TOMAN_SOURCE
+    try:
+        rates["TOM"] = _fetch_toman()
+    except Exception:
+        previous = None
+        if _last_good:
+            previous = (_last_good.get("rates") or {}).get("TOM")
+        if previous:
+            rates["TOM"] = float(previous)
+            toman_source = f"{TOMAN_SOURCE} (آخر قراءة)"
+        else:
+            rates["TOM"] = USD_TOMAN_FALLBACK
+            toman_source = "قيمة احتياطية — تعذر الاتصال بمصدر السوق الحر"
+
     payload = {
         "rates": rates,
         "updated": data.get("updated", ""),
         "source": data.get("source", ""),
+        "toman_source": toman_source,
     }
     with _lock:
         _cache["fx"] = (now, payload)
@@ -116,8 +161,16 @@ def currency_payload() -> dict:
         "source": data.get("source", ""),
         "items": items,
         "usd_iqd": round(float(rates.get("IQD") or DEFAULT_USD_IQD), 2),
-        "note_ar": "الأسعار استرشادية من سوق العملات العالمي. سعر الصرف المحلي في العراق قد يختلف قليلاً.",
-        "note_en": "Indicative global FX rates. Local Iraqi market rates may differ slightly.",
+        "usd_toman": round(float(rates.get("TOM") or 0), 2),
+        "toman_source": data.get("toman_source", TOMAN_SOURCE),
+        "note_ar": (
+            "الدولار والتومان بسعر السوق الحر (طهران)، والدينار العراقي بسعر السوق الموازي. "
+            "الأسعار استرشادية وقد تختلف قليلاً بين الصرافين."
+        ),
+        "note_en": (
+            "USD/Toman uses the Tehran free market and IQD uses the Iraqi parallel market. "
+            "Rates are indicative and may vary slightly between exchangers."
+        ),
     }
 
 

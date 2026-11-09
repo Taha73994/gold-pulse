@@ -63,7 +63,7 @@ class ForecastCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l.en ? 'Probability forecast' : 'توقع احتمالي',
+                      l.en ? 'Probability scenario' : 'سيناريو احتمالي',
                       style: TextStyle(
                         fontFamily: 'Cairo',
                         fontSize: 12,
@@ -230,6 +230,19 @@ class ForecastCard extends StatelessWidget {
                 color: c.ink,
               ),
             ),
+            if (s.confidenceNote.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                s.confidenceNote,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontSize: 10,
+                  height: 1.5,
+                  fontWeight: FontWeight.w600,
+                  color: c.amber,
+                ),
+              ),
+            ],
             const SizedBox(height: 6),
             Text(
               forecast.disclaimer,

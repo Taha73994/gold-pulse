@@ -44,6 +44,11 @@ kotlin {
     }
 }
 
+dependencies {
+    // فحص دوري في الخلفية لإرسال الإشعارات حتى عندما يكون التطبيق مغلقاً.
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+}
+
 flutter {
     source = "../.."
 }
