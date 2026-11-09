@@ -1,38 +1,54 @@
 package iq.goldpulse.gold_pulse_app
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
-import androidx.work.BackoffPolicy
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
-import java.util.concurrent.TimeUnit
+import android.content.Intent
 
-/** جدولة الفحص الدوري في الخلفية (أقل مدة يسمح بها أندرويد هي 15 دقيقة). */
+/**
+ * جدولة الفحص الدوري في الخلفية عبر AlarmManager.
+ * لا تعتمد على WorkManager/Room، لذلك لا يمكنها إسقاط التطبيق عند البدء.
+ */
 object GoldAlertScheduler {
-    private const val UNIQUE_NAME = "gold_pulse_background_alerts"
+    private const val ACTION = "iq.goldpulse.action.CHECK_ALERTS"
+    private const val REQUEST_CODE = 7421
+    private const val INTERVAL_MS = 15 * 60 * 1000L
 
     fun schedule(context: Context) {
-        // على بعض الأجهزة قد يفشل تهيئة WorkManager؛ يجب ألا يمنع ذلك فتح التطبيق.
         try {
-            val constraints = Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.CONNECTED)
-                .build()
-            val request = PeriodicWorkRequestBuilder<GoldAlertWorker>(
-                15, TimeUnit.MINUTES,
-                5, TimeUnit.MINUTES
-            )
-                .setConstraints(constraints)
-                .setBackoffCriteria(BackoffPolicy.LINEAR, 1, TimeUnit.MINUTES)
-                .build()
-            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-                UNIQUE_NAME,
-                ExistingPeriodicWorkPolicy.UPDATE,
-                request
+            val manager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return
+            val pending = pendingIntent(context)
+            manager.cancel(pending)
+            val first = System.currentTimeMillis() + 60_000L
+            manager.setInexactRepeating(
+                AlarmManager.RTC_WAKEUP,
+                first,
+                INTERVAL_MS,
+                pending
             )
         } catch (_: Throwable) {
-            // التطبيق يعمل؛ الإشعارات الخلفية فقط قد لا تُجدول على هذا الجهاز.
+            // الإشعارات الخلفية اختيارية؛ لا تمنع فتح التطبيق.
         }
+    }
+
+    fun cancel(context: Context) {
+        try {
+            val manager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return
+            manager.cancel(pendingIntent(context))
+        } catch (_: Throwable) {
+            // تجاهل.
+        }
+    }
+
+    private fun pendingIntent(context: Context): PendingIntent {
+        val intent = Intent(context, GoldAlertReceiver::class.java).setAction(ACTION)
+        return PendingIntent.getBroadcast(
+            context,
+            REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
     }
 }

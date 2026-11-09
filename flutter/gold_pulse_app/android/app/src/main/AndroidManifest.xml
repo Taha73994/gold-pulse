@@ -45,6 +45,10 @@
             </intent-filter>
         </activity>
         <receiver
+            android:name=".GoldAlertReceiver"
+            android:enabled="true"
+            android:exported="false" />
+        <receiver
             android:name=".BootReceiver"
             android:enabled="true"
             android:exported="true">

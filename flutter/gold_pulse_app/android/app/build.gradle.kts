@@ -34,6 +34,10 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            // نوقف R8 صراحةً: نسخة 1.2.4 أزالت منشئ WorkDatabase_Impl بالتفاؤل
+            // وأسقطت التطبيق عند البدء. لا نريد أي حذف/تشويش للفئات.
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 
@@ -54,7 +58,8 @@ kotlin {
 
 dependencies {
     // فحص دوري في الخلفية لإرسال الإشعارات حتى عندما يكون التطبيق مغلقاً.
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
+    // لا نستخدم WorkManager: كان يسبب انهيار البدء عبر Room، واستُبدل بـ AlarmManager.
+    // لا توجد تبعيات أصلية إضافية مطلوبة.
 }
 
 flutter {
