@@ -1,6 +1,6 @@
 [project]
 name = "gold-pulse"
-version = "1.2.3"
+version = "1.2.4"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi==0.162.0",

@@ -36,6 +36,14 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // بعض أجهزة أندرويد القديمة تفشل في تحميل المكتبات من داخل APK مباشرة.
+    // استخراج المكتبات الأصلية عند التثبيت يزيد التوافق.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
 }
 
 kotlin {

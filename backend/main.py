@@ -79,7 +79,7 @@ app = FastAPI(
         "API لأسعار الذهب الحية، التحليل الفني والأساسي، معنويات الأخبار، "
         "دليل المحلات، الإعلانات، والعملات. أداة دعم قرار وليست نصيحة استثمارية."
     ),
-    version="1.2.3",
+    version="1.2.4",
     lifespan=lifespan,
 )
 
@@ -120,7 +120,7 @@ def health():
     return {
         "ok": True,
         "service": "gold-pulse-api",
-        "version": "1.2.3",
+        "version": "1.2.4",
         "time": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -132,7 +132,7 @@ def config(lang: str = "ar"):
         "app_name": "Gold Pulse" if lang == "en" else "نبض الذهب",
         "app_name_ar": "نبض الذهب",
         "app_name_en": "Gold Pulse",
-        "version": "1.2.3",
+        "version": "1.2.4",
         "owner": OWNER_NAME,
         "copyright": COPYRIGHT_EN if lang == "en" else COPYRIGHT_AR,
         "disclaimer": DISCLAIMER,

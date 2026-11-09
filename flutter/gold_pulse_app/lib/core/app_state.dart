@@ -101,8 +101,17 @@ class AppState extends ChangeNotifier {
       ads.where((a) => a.isFeatured).take(6).toList();
 
   Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
-    final p = _prefs!;
+    // لا نسمح لفشل التخزين المحلي أو الشبكة أن يعلّق شاشة البداية.
+    try {
+      _prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 8),
+      );
+    } catch (e) {
+      debugPrint('تعذرت قراءة الإعدادات المحلية: $e');
+    }
+    final p = _prefs;
+    if (p != null) {
+      try {
     final query = Uri.base.queryParameters;
     final queryLocale = query['lang'];
     en =
@@ -144,17 +153,28 @@ class AppState extends ChangeNotifier {
     if (p.getString('device_id') == null) {
       await p.setString('device_id', deviceId);
     }
-    await Notifier.init();
-
-    await _bootstrap();
+      } catch (e) {
+        debugPrint('تعذر تحميل التفضيلات: $e');
+      }
+    }
+    try {
+      await Notifier.init();
+    } catch (_) {
+      // الإشعارات اختيارية ولا تمنع فتح التطبيق.
+    }
+    try {
+      await _bootstrap().timeout(const Duration(seconds: 15));
+    } catch (e) {
+      debugPrint('تعذر تحميل البيانات الأولية: $e');
+    }
     if (adminPin.isNotEmpty) {
       // جلسة المالك محفوظة: نحمّل لوحة التحكم بالخلفية.
-      loadAdminData();
+      unawaited(loadAdminData());
     }
     ready = true;
     _notify();
     _startTimers();
-    _prepareNotifications();
+    unawaited(_prepareNotifications());
   }
 
   /// يطلب إذن الإشعارات أول مرة، ويزامن الحالة مع إعدادات الهاتف.

@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
@@ -7,9 +8,20 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
     <application
         android:label="نبض الذهب"
-        android:name="${applicationName}"
+        android:name=".GoldPulseApp"
         android:icon="@mipmap/ic_launcher"
+        android:largeHeap="true"
         android:usesCleartextTraffic="true">
+        <!-- تعطيل Impeller مؤقتاً: بعض معالجات الرسوم تُغلق التطبيق فوراً
+             على أندرويد 12+ مع محرك Vulkan. Skia أكثر توافقاً. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
+        <activity
+            android:name=".CrashReportActivity"
+            android:exported="false"
+            android:process=":crash"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
